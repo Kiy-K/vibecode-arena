@@ -20,7 +20,7 @@ export interface JudgingResult {
 		visualMatching: AgentAnalysis;
 		interactionTesting: AgentAnalysis;
 	};
-	aggregationMethod: 'weighted_average' | 'consensus' | 'minimum';
+	aggregationMethod: 'weighted_average' | 'consensus' | 'minimum' | 'early_rejection';
 }
 
 /** Input context for agent analysis */

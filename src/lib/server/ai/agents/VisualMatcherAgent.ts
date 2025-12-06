@@ -20,10 +20,10 @@ import { VISUAL_MATCHER_SYSTEM, getVisualMatcherPrompt } from '../prompts';
 const CONFIG = {
 	/** Agent identifier */
 	NAME: 'VisualMatcher',
-	/** Model to use for analysis (using most capable for visual comparison) */
-	MODEL: 'anthropic/claude-opus-4.5',
+	/** Model to use - Gemini Flash for speed (still good at code comparison) */
+	MODEL: 'google/gemini-2.0-flash-001',
 	/** Maximum tokens for response */
-	MAX_OUTPUT_TOKENS: 500,
+	MAX_OUTPUT_TOKENS: 300,
 	/** Weight in final score calculation (0-1) - highest as this is a UI competition */
 	WEIGHT: 0.45,
 	/** Default score when analysis fails */

@@ -58,6 +58,7 @@
 		"@anthropic-ai/sdk": "^0.71.1",
 		"@openrouter/ai-sdk-provider": "^1.4.0",
 		"ai": "^5.0.106",
+		"bits-ui": "^2.14.4",
 		"canvas-confetti": "^1.9.4",
 		"e2b": "^2.8.3",
 		"highlight.js": "^11.11.1",

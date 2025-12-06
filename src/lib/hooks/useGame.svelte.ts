@@ -2,7 +2,6 @@
  * Main game orchestration hook.
  * Combines state management, SSE events, keyboard shortcuts, and actions.
  */
-import { onMount } from 'svelte';
 
 import type {
 	Room,
@@ -176,14 +175,14 @@ export function useGame(init: GameInit) {
 			players: room.players.map((p) =>
 				p.id === data.playerId
 					? {
-							...p,
-							passed: data.passed,
-							submissionTime: data.timeTaken,
-							score: data.score || p.score,
-							roundScore: data.roundScore,
-							sandboxUrl: data.sandboxUrl || p.sandboxUrl,
-							screenshotUrl: data.screenshotUrl || p.screenshotUrl
-						}
+						...p,
+						passed: data.passed,
+						submissionTime: data.timeTaken,
+						score: data.score || p.score,
+						roundScore: data.roundScore,
+						sandboxUrl: data.sandboxUrl || p.sandboxUrl,
+						screenshotUrl: data.screenshotUrl || p.screenshotUrl
+					}
 					: p
 			)
 		};
@@ -453,7 +452,7 @@ export function useGame(init: GameInit) {
 						sandboxUrl = res.sandboxUrl;
 					}
 				})
-				.catch(() => {});
+				.catch(() => { });
 		}
 	});
 

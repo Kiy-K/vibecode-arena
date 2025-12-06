@@ -1,9 +1,9 @@
-import { OPENROUTER_API_KEY } from '$env/static/private';
 import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 import { DEFAULT_MODEL } from '$lib/config/models';
+import { env } from '../env';
 
 export const openrouter = createOpenRouter({
-	apiKey: OPENROUTER_API_KEY
+	apiKey: env.OPENROUTER_API_KEY
 });
 
 // Model IDs are already in OpenRouter format, no mapping needed

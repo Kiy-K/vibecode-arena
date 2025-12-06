@@ -24,7 +24,7 @@ export const load: PageServerLoad = async ({ params, cookies }) => {
 	const roundId = `${room.id}:${room.round}`;
 	const chatHistory = getChatHistory(playerId!, roundId);
 
-	// Get sandbox status (room-based, not player-based)
+	// Get sandbox status
 	const sandboxReady = SandboxManager.isReady(room.id);
 	const sandboxUrl = SandboxManager.getPlayerUrl(room.id, playerId!);
 

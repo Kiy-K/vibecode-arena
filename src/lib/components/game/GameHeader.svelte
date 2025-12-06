@@ -1,4 +1,9 @@
+<!--
+  GameHeader - Top bar during gameplay.
+  Shows challenge info, timer, score, and player status.
+-->
 <script lang="ts">
+  import { Tooltip } from "bits-ui";
   import { MODELS } from "$lib/config/models";
   import type { Room, Player } from "$lib/types/game";
 
@@ -150,44 +155,74 @@
     <!-- Right: Stats -->
     <div class="flex items-center gap-1 md:gap-2">
       <!-- Player score -->
-      <div
-        class="flex items-center gap-2 px-2.5 py-1 bg-orange-500/10 border border-orange-500/20"
-      >
-        <span class="text-xs text-orange-400">score</span>
-        <span class="text-xs font-mono font-bold text-orange-500">
-          {player?.score ?? 0}
-        </span>
-      </div>
+      <Tooltip.Root delayDuration={200}>
+        <Tooltip.Trigger>
+          <div
+            class="flex items-center gap-2 px-2.5 py-1 bg-orange-500/10 border border-orange-500/20 cursor-help"
+          >
+            <span class="text-xs text-orange-400">score</span>
+            <span class="text-xs font-mono font-bold text-orange-500">
+              {player?.score ?? 0}
+            </span>
+          </div>
+        </Tooltip.Trigger>
+        <Tooltip.Content
+          class="z-50 px-3 py-2 text-xs bg-neutral-900 border border-neutral-700 text-neutral-300 max-w-48"
+          sideOffset={8}
+        >
+          Your total points. Earn more by solving fast with fewer prompts.
+        </Tooltip.Content>
+      </Tooltip.Root>
 
       <!-- Prompts used -->
-      <div
-        class="hidden sm:flex items-center gap-2 px-2.5 py-1 bg-neutral-900 border border-neutral-800"
-      >
-        <span class="text-xs text-neutral-500">prompts</span>
-        <span
-          class="text-xs font-mono font-bold {promptsUsed === 0
-            ? 'text-neutral-600'
-            : promptsUsed < 3
-              ? 'text-green-400'
-              : promptsUsed < 5
-                ? 'text-orange-400'
-                : 'text-red-400'}"
+      <Tooltip.Root delayDuration={200}>
+        <Tooltip.Trigger>
+          <div
+            class="hidden sm:flex items-center gap-2 px-2.5 py-1 bg-neutral-900 border border-neutral-800 cursor-help"
+          >
+            <span class="text-xs text-neutral-500">prompts</span>
+            <span
+              class="text-xs font-mono font-bold {promptsUsed === 0
+                ? 'text-neutral-600'
+                : promptsUsed < 3
+                  ? 'text-green-400'
+                  : promptsUsed < 5
+                    ? 'text-orange-400'
+                    : 'text-red-400'}"
+            >
+              {promptsUsed}
+            </span>
+          </div>
+        </Tooltip.Trigger>
+        <Tooltip.Content
+          class="z-50 px-3 py-2 text-xs bg-neutral-900 border border-neutral-700 text-neutral-300 max-w-48"
+          sideOffset={8}
         >
-          {promptsUsed}
-        </span>
-      </div>
+          Messages sent this round. Fewer prompts = higher score bonus.
+        </Tooltip.Content>
+      </Tooltip.Root>
 
       <!-- Model badge -->
-      <div
-        class="hidden lg:flex items-center gap-2 px-2.5 py-1 bg-neutral-900 border border-neutral-800"
-      >
-        <span class="text-xs text-neutral-400">
-          {MODELS.find((m) => m.id === player?.model)?.name}
-        </span>
-        <span class="text-xs font-mono text-neutral-500">
-          {MODELS.find((m) => m.id === player?.model)?.multiplier}×
-        </span>
-      </div>
+      <Tooltip.Root delayDuration={200}>
+        <Tooltip.Trigger>
+          <div
+            class="hidden lg:flex items-center gap-2 px-2.5 py-1 bg-neutral-900 border border-neutral-800 cursor-help"
+          >
+            <span class="text-xs text-neutral-400">
+              {MODELS.find((m) => m.id === player?.model)?.name}
+            </span>
+            <span class="text-xs font-mono text-neutral-500">
+              {MODELS.find((m) => m.id === player?.model)?.multiplier}×
+            </span>
+          </div>
+        </Tooltip.Trigger>
+        <Tooltip.Content
+          class="z-50 px-3 py-2 text-xs bg-neutral-900 border border-neutral-700 text-neutral-300 max-w-52"
+          sideOffset={8}
+        >
+          Your AI model. Lower multiplier = smarter model = less points (for balance).
+        </Tooltip.Content>
+      </Tooltip.Root>
     </div>
   </div>
 </header>

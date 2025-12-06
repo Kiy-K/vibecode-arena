@@ -36,6 +36,8 @@ export {
 	resetPlayerWaitTime,
 	type RateLimitConfig
 } from './ratelimit';
+
+// Chat Store
 export {
 	getChatHistory,
 	saveChatMessage,

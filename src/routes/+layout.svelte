@@ -1,13 +1,28 @@
 <script lang="ts">
   import "../app.css";
+  import { Tooltip } from "bits-ui";
+  import { onNavigate } from '$app/navigation';
   import { siteConfig, getPageMeta, getWebsiteSchema } from '$lib/config/seo';
 
   let { children } = $props();
 
   const meta = getPageMeta({});
   const schemaJson = JSON.stringify(getWebsiteSchema());
+
   // Build the script tag for JSON-LD to avoid ESLint parsing issues
   const jsonLdScript = '<' + 'script type="application/ld+json">' + schemaJson + '</' + 'script>';
+
+  // View Transitions API
+  onNavigate((navigation) => {
+    if (!document.startViewTransition) return;
+
+    return new Promise((resolve) => {
+      document.startViewTransition(async () => {
+        resolve();
+        await navigation.complete;
+      });
+    });
+  });
 </script>
 
 <svelte:head>
@@ -21,6 +36,23 @@
 
   <!-- Canonical URL -->
   <link rel="canonical" href={siteConfig.url} />
+
+  <!-- Priority Hints - Preload critical resources -->
+  <link
+    rel="preload"
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap"
+    as="style"
+    fetchpriority="high"
+  />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Vibecode" />
+  <link rel="apple-touch-icon" href="/favicon.png" />
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content={meta.og.type} />
@@ -43,4 +75,6 @@
   {@html jsonLdScript}
 </svelte:head>
 
-{@render children()}
+<Tooltip.Provider>
+  {@render children()}
+</Tooltip.Provider>

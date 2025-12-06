@@ -14,9 +14,6 @@ export const STALE_TIMEOUT_MS = 15 * 60 * 1000;
 /** Cleanup check interval (1 minute) */
 export const CLEANUP_INTERVAL_MS = 60_000;
 
-/** Delay for HMR to update before scoring (ms) */
-export const HMR_DELAY_MS = 500;
-
 /** Maximum time to wait for Vite server to start (iterations × 300ms) */
 export const SERVER_STARTUP_MAX_POLLS = 60;
 

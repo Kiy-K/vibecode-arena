@@ -1,3 +1,7 @@
+<!--
+  PlayerList - Sidebar showing all players during gameplay.
+  Displays status (working, analysing, passed, failed) and scores.
+-->
 <script lang="ts">
   import { MODELS } from "$lib/config/models";
   import type { Player } from "$lib/types/game";

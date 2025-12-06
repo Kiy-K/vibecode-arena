@@ -1,3 +1,7 @@
+<!--
+  CodePanel - Code preview and submission panel.
+  Shows live preview, generated code, logs, and submission UI.
+-->
 <script lang="ts">
   import type { SubmissionResult } from "$lib/types/game";
   import { Highlight } from "svelte-highlight";
@@ -30,7 +34,7 @@
 </script>
 
 <div
-  class="{isMobile
+  class="code-panel {isMobile
     ? 'md:hidden flex-1'
     : 'hidden lg:flex w-[420px] border-l border-neutral-800'} flex flex-col bg-neutral-950"
 >

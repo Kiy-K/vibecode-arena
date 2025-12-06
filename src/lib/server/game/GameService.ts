@@ -366,7 +366,7 @@ class GameServiceImpl {
 
 	/**
 	 * Deduct points from a player's score (e.g., for using hints).
-	 * Score cannot go below 0.
+	 * Score floors at 0.
 	 */
 	deductScore(roomId: string, playerId: string, points: number): boolean {
 		const room = RoomService.get(roomId);

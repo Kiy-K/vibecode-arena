@@ -1,7 +1,14 @@
+<!--
+  GameOver - Final leaderboard and results screen.
+  Shows podium, rankings, and play again option.
+-->
 <script lang="ts">
-  import { onMount } from "svelte";
-  import { MODELS } from "$lib/config/models";
   import type { Player } from "$lib/types/game";
+
+  import { onMount } from "svelte";
+	import { goto } from "$app/navigation";
+  import { MODELS } from "$lib/config/models";
+	
   import { fireSuccessConfetti } from "$lib/utils/confetti";
 
   interface Props {
@@ -73,7 +80,7 @@
   });
 
   function playAgain() {
-    window.location.href = "/";
+    goto("/");
   }
 </script>
 

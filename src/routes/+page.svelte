@@ -1,24 +1,33 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import { goto } from "$app/navigation";
 
-  onMount(() => {
-    function handleKeydown(e: KeyboardEvent) {
-      if (e.key === "c" && !e.metaKey && !e.ctrlKey) {
-        goto("/create");
-      } else if (e.key === "j" && !e.metaKey && !e.ctrlKey) {
-        goto("/join");
-      }
-    }
-    window.addEventListener("keydown", handleKeydown);
-    return () => window.removeEventListener("keydown", handleKeydown);
-  });
+  const handleKeydown = (e: KeyboardEvent) => {
+    if (e.metaKey || e.ctrlKey) return;
+    if (e.key === "c") goto("/create");
+    if (e.key === "j") goto("/join");
+  }
 </script>
 
+<svelte:head>
+  <!-- Speculation Rules API - Prerender likely destinations -->
+  {@html `<script type="speculationrules">
+    {
+      "prerender": [
+        { "where": { "href_matches": ["/create", "/join"] } }
+      ],
+      "prefetch": [
+        { "where": { "href_matches": ["/create", "/join"] } }
+      ]
+    }
+  </script>`}
+</svelte:head>
+
+<svelte:window onkeydown={handleKeydown} />
+
 <div class="min-h-screen bg-black text-white flex items-center justify-center p-4 md:p-8">
-  <div class="w-full max-w-4xl border border-neutral-800 flex flex-col md:flex-row min-h-[500px]">
+  <div class="w-full max-w-4xl border border-neutral-800 flex flex-col md:flex-row min-h-[500px]" style="view-transition-name: main-card;">
     <!-- Left: Main content -->
-    <div class="flex-1 flex flex-col items-center justify-center p-8">
+    <div class="flex-1 flex flex-col items-center justify-center p-8" style="view-transition-name: main-content;">
       <!-- Header -->
       <div class="text-center mb-12">
         <h1 class="text-4xl md:text-5xl font-bold mb-3">
@@ -80,7 +89,7 @@
     </div>
 
     <!-- Right: Info panel -->
-    <div class="hidden md:flex w-72 bg-neutral-950/50 border-l border-neutral-800 flex-col">
+    <div class="hidden md:flex w-72 bg-neutral-950/50 border-l border-neutral-800 flex-col" style="view-transition-name: side-panel;">
       <div class="p-4 border-b border-neutral-800">
         <div class="text-neutral-600 text-[10px] uppercase tracking-widest">
           what is this?

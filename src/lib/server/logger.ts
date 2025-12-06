@@ -23,7 +23,7 @@ const baseLogger = pino({
 
 /**
  * Create a child logger with a specific context name.
- * Usage: const log = createLogger('SandboxManager');
+ * Usage: const log = createLogger('MyModule');
  */
 export function createLogger(name: string) {
 	const child = baseLogger.child({ name });

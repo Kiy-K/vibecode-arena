@@ -1,6 +1,5 @@
 import type { Player, Room } from '$lib/types/game';
 import { MODELS } from '$lib/config/models';
-import { getHintCost } from './ai/tools';
 
 /**
  * Scoring System
@@ -10,8 +9,10 @@ import { getHintCost } from './ai/tools';
  * Time Bonus:     0-150 points (faster = more) - only if passed
  * Efficiency:     0-200 points (fewer prompts = more) - only if passed
  * Position Bonus: 1st: 250, 2nd: 150, 3rd: 50 - only if passed
- * Hint Penalty:   -50 points per hint used
  * Model Multiplier: Harder models = more points
+ *
+ * Note: Hint penalties (-50 pts each) are deducted immediately when used,
+ * not during scoring.
  *
  * Examples:
  * - 90% similarity + fast + 1st place = ~1400 pts
@@ -27,6 +28,17 @@ const EFFICIENCY_BONUS_MAX = 200;
 const EFFICIENCY_PENALTY_PER_PROMPT = 40;
 const POSITION_BONUSES = [250, 150, 50] as const;
 
+/**
+ * Calculate a player's score for the current round.
+ * @param player - The player being scored
+ * @param room - The current game room
+ * @param timeTaken - Time taken in milliseconds
+ * @param promptsUsed - Number of AI prompts used
+ * @param waitTimeMs - Time spent waiting for AI responses (subtracted from time bonus calculation)
+ * @param similarityScore - Similarity score from judging (0-100)
+ * @param passed - Whether the submission passed the challenge
+ * @returns Final score for the round (includes model multiplier)
+ */
 export function calculateScore(
 	player: Player,
 	room: Room,
@@ -37,7 +49,6 @@ export function calculateScore(
 	passed: boolean = true
 ): number {
 	const modelMultiplier = MODELS.find((m) => m.id === player.model)?.multiplier ?? 1.0;
-	const challengeId = room.currentChallenge?.id || 'unknown';
 
 	// Base score scales with similarity (0-100%)
 	const similarityRatio = similarityScore / 100;
@@ -58,10 +69,7 @@ export function calculateScore(
 		bonuses = timeBonus + efficiencyBonus + positionBonus;
 	}
 
-	// Apply hint penalty (hints cost points regardless of pass/fail)
-	const hintPenalty = getHintCost(player.id, challengeId);
-
-	const rawScore = Math.max(0, baseScore + bonuses - hintPenalty);
+	const rawScore = Math.max(0, baseScore + bonuses);
 	const finalScore = Math.round(rawScore * modelMultiplier);
 
 	return finalScore;

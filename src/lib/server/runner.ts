@@ -6,7 +6,7 @@ import type { Challenge, SubmissionResult } from '$lib/types/game';
 
 import { judgeSubmission } from './ai/agents';
 import { createLogger } from './logger';
-import { SandboxManager, waitForHMR } from './e2b';
+import { SandboxManager } from './e2b';
 
 // Re-export for backwards compatibility
 export { startRoomSandbox, previewCode } from './e2b';
@@ -26,7 +26,7 @@ const PASS_THRESHOLD = 70;
 
 /**
  * Run and score player's code submission.
- * Writes code to sandbox, waits for HMR, then scores against reference.
+ * Writes code to sandbox, then scores against reference.
  */
 export async function runCode(
 	code: string,
@@ -42,9 +42,6 @@ export async function runCode(
 		// Write player's code to sandbox
 		await SandboxManager.updatePlayerCode(roomId, playerId, code);
 		const sandboxUrl = SandboxManager.getPlayerUrl(roomId, playerId);
-
-		// Wait for HMR to update
-		await waitForHMR();
 
 		// Score the submission using multi-agent judging
 		emitLog('Analyzing with multi-agent system...');

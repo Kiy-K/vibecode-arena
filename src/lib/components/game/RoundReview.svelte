@@ -1,3 +1,7 @@
+<!--
+	RoundReview - Between-rounds review screen.
+	Shows all player submissions with previews and rankings.
+-->
 <script lang="ts">
 	import type { Player, Challenge, PublicChallenge } from '$lib/types/game';
 
@@ -27,11 +31,6 @@
 		onContinue?: () => void;
 	} = $props();
 
-	x
-	function displayName(player: Player): string {
-		return player.id === currentPlayerId ? `${player.name} (you)` : player.name;
-	}
-
 	// Sort players by round score (highest first)
 	const sortedPlayers = $derived(
 		[...players].sort((a, b) => {
@@ -55,6 +54,10 @@
 		if (index === 1) return 'text-neutral-300';
 		if (index === 2) return 'text-amber-500';
 		return 'text-neutral-500';
+	}
+
+	function displayName(player: Player): string {
+		return player.id === currentPlayerId ? `${player.name} (you)` : player.name;
 	}
 </script>
 

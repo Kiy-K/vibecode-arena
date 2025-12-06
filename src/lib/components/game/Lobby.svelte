@@ -1,5 +1,8 @@
+<!--
+  Lobby - Pre-game waiting room.
+  Shows room code, player list, and start button for host.
+-->
 <script lang="ts">
-  import { onMount } from "svelte";
   import { MODELS } from "$lib/config/models";
   import type { Room } from "$lib/types/game";
 
@@ -32,16 +35,14 @@
     }
   }
 
-  onMount(() => {
-    function handleKeydown(e: KeyboardEvent) {
-      if (e.key === "Enter" && isHost && sandboxReady && !starting) {
-        handleStart();
-      }
+  function handleKeydown(e: KeyboardEvent) {
+    if (e.key === "Enter" && isHost && sandboxReady && !starting) {
+      handleStart();
     }
-    window.addEventListener("keydown", handleKeydown);
-    return () => window.removeEventListener("keydown", handleKeydown);
-  });
+  }
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 <div class="min-h-screen flex items-center justify-center p-4 md:p-8">
   <div class="w-full max-w-4xl border border-neutral-800 flex flex-col md:flex-row min-h-[500px]">
@@ -50,6 +51,7 @@
       <!-- Room code -->
       <button
         onclick={copyCode}
+        aria-label="Copy room code {room.code} to clipboard"
         class="mb-12 text-center group cursor-pointer"
       >
         <div class="text-neutral-600 text-xs uppercase tracking-widest mb-3">

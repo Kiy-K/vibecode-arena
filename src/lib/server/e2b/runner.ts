@@ -10,7 +10,6 @@ import {
 	SERVER_STARTUP_MAX_POLLS,
 	SERVER_POLL_INTERVAL_MS,
 	SERVER_CHECK_TIMEOUT_MS,
-	HMR_DELAY_MS,
 	APP_DIR
 } from './config';
 
@@ -103,12 +102,4 @@ export async function previewCode(
 	await SandboxManager.updatePlayerCode(roomId, playerId, code);
 	const sandboxUrl = SandboxManager.getPlayerUrl(roomId, playerId);
 	return { sandboxUrl: `${sandboxUrl}&t=${Date.now()}` };
-}
-
-/**
- * Wait for HMR to update.
- * Used after writing code to sandbox before evaluating.
- */
-export async function waitForHMR(): Promise<void> {
-	await new Promise((r) => setTimeout(r, HMR_DELAY_MS));
 }

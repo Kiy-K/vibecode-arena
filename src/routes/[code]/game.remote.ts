@@ -103,6 +103,7 @@ export const startRound = command(v.string(), async (roomCode) => {
  */
 export const submitCode = command(
 	v.object({ roomCode: v.string(), messageId: v.string() }),
+
 	async ({ roomCode, messageId }) => {
 		const room = requireRoom(roomCode);
 		const playerId = requirePlayer(room.id);
@@ -111,7 +112,7 @@ export const submitCode = command(
 			error(400, 'No active challenge');
 		}
 
-		// Block new submissions if timer reached 0 and we're waiting for judging
+		// Block new submissions if timer reached 0 and we're waiting for judging to finish
 		if (!GameService.canStartSubmission(room.id)) {
 			error(400, 'Time is up - submissions are closed');
 		}

@@ -1,3 +1,7 @@
+<!--
+  ChatArea - AI chat interface for gameplay.
+  Displays conversation history and handles user input.
+-->
 <script lang="ts">
   import MessageContent from "$lib/components/MessageContent.svelte";
   import type { ToolCall } from "$lib/hooks/useChat.svelte";
@@ -77,7 +81,7 @@
   }
 </script>
 
-<div class="flex-1 flex flex-col">
+<div class="chat-panel flex-1 flex flex-col">
   <!-- Messages -->
   <div
     bind:this={messagesContainer}
@@ -95,7 +99,7 @@
       <div class="space-y-4 max-w-3xl mx-auto">
         {#each messages as message (message.id)}
           <div
-            class="flex {message.role === 'user'
+            class="chat-message flex {message.role === 'user'
               ? 'justify-end'
               : 'justify-start'}"
           >
@@ -193,6 +197,7 @@
             value={chatInput}
             oninput={handleInput}
             onkeydown={handleKeydown}
+            aria-label="Message to AI assistant"
             placeholder={submitted
               ? "solution submitted"
               : "tell your ai what to do..."}
@@ -203,6 +208,7 @@
           ></textarea>
           <button
             type="submit"
+            aria-label={chatLoading ? "Sending message" : "Send message"}
             disabled={chatLoading || submitted || !chatInput.trim()}
             class="shrink-0 p-2.5 bg-orange-500 text-black hover:bg-orange-400 transition-all disabled:opacity-30 disabled:bg-neutral-800 disabled:text-neutral-600 self-end mb-1"
           >

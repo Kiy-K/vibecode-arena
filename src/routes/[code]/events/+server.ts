@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
 import { roomEvents } from '$lib/server/events';
-
 import { RoomService } from '$lib/server/rooms/RoomService';
+import { sanitizeRoom } from '$lib/server/sanitize';
 
 export const GET: RequestHandler = async ({ params, cookies }) => {
 	const room = RoomService.getByCode(params.code);
@@ -24,10 +24,10 @@ export const GET: RequestHandler = async ({ params, cookies }) => {
 		start(controller) {
 			const encoder = new TextEncoder();
 
-			// Send initial state
+			// Send initial state (sanitized to hide referenceCode)
 			try {
 				controller.enqueue(
-					encoder.encode(`data: ${JSON.stringify({ event: 'connected', data: { room } })}\n\n`)
+					encoder.encode(`data: ${JSON.stringify({ event: 'connected', data: { room: sanitizeRoom(room) } })}\n\n`)
 				);
 			} catch {
 				isClosed = true;

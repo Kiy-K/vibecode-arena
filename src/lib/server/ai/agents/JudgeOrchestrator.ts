@@ -1,43 +1,37 @@
 /**
- * Judge Orchestrator Agent
+ * Judge Orchestrator
  *
- * An AI agent that coordinates specialized analysis agents and
- * synthesizes their findings into a final judgment.
+ * Coordinates specialized analysis agents and synthesizes results.
+ * Optimized for speed with caching, early rejection, and no orchestrator LLM call.
  */
 
 import type { AgentAnalysis, JudgeAgent, JudgingContext, JudgingResult } from './types';
 
-import { generateText } from 'ai';
-import { createOpenRouter } from '@openrouter/ai-sdk-provider';
-
-import { env } from '../../env';
 import { createLogger } from '../../logger';
-import { getOrchestratorPrompt } from '../prompts';
 import { CodeAnalyzerAgent } from './CodeAnalyzerAgent';
 import { InteractionTesterAgent } from './InteractionTesterAgent';
 import { VisualMatcherAgent } from './VisualMatcherAgent';
 
 // =============================================================================
-// ORCHESTRATOR CONFIGURATION
+// CONFIGURATION
 // =============================================================================
 const CONFIG = {
-	/** Model to use for final synthesis */
-	MODEL: 'google/gemini-2.5-flash-preview-09-2025',
-	/** Maximum tokens for orchestrator response */
-	MAX_OUTPUT_TOKENS: 300,
-	/** Default score when orchestrator fails */
-	FALLBACK_SCORE: 50 as number,
-	/** Fallback weights if orchestrator AI fails (used for weighted average) */
-	FALLBACK_WEIGHTS: {
+	/** Weights for final score calculation */
+	WEIGHTS: {
 		CodeAnalyzer: 0.25,
 		VisualMatcher: 0.5,
 		InteractionTester: 0.25
-	} as Record<string, number>
+	} as Record<string, number>,
+	/** Default score for failures */
+	FALLBACK_SCORE: 50,
+	/** Cache TTL in ms (5 minutes) */
+	CACHE_TTL_MS: 5 * 60 * 1000,
+	/** Max cache entries */
+	CACHE_MAX_SIZE: 100
 };
 // =============================================================================
 
 const log = createLogger('JudgeOrchestrator');
-const openrouter = createOpenRouter({ apiKey: env.OPENROUTER_API_KEY });
 
 /** Specialized analysis agents */
 const agents: JudgeAgent[] = [
@@ -46,18 +40,120 @@ const agents: JudgeAgent[] = [
 	new InteractionTesterAgent()
 ];
 
+// =============================================================================
+// RESULT CACHING
+// =============================================================================
+
+interface CacheEntry {
+	result: JudgingResult;
+	timestamp: number;
+}
+
+/** Simple LRU-ish cache for submission results */
+const resultCache = new Map<string, CacheEntry>();
+
+/** Create cache key from code pair */
+function getCacheKey(referenceCode: string, submissionCode: string): string {
+	// Simple hash - combine lengths and first/last chars for fast key
+	const refHash = `${referenceCode.length}:${referenceCode.slice(0, 50)}:${referenceCode.slice(-50)}`;
+	const subHash = `${submissionCode.length}:${submissionCode.slice(0, 50)}:${submissionCode.slice(-50)}`;
+	return `${refHash}|${subHash}`;
+}
+
+/** Get cached result if valid */
+function getCached(key: string): JudgingResult | null {
+	const entry = resultCache.get(key);
+	if (!entry) return null;
+
+	if (Date.now() - entry.timestamp > CONFIG.CACHE_TTL_MS) {
+		resultCache.delete(key);
+		return null;
+	}
+
+	return entry.result;
+}
+
+/** Cache a result */
+function setCache(key: string, result: JudgingResult): void {
+	// Evict oldest if at capacity
+	if (resultCache.size >= CONFIG.CACHE_MAX_SIZE) {
+		const firstKey = resultCache.keys().next().value;
+		if (firstKey) resultCache.delete(firstKey);
+	}
+
+	resultCache.set(key, { result, timestamp: Date.now() });
+}
+
+// =============================================================================
+// EARLY REJECTION
+// =============================================================================
+
+/** Check if code is trivially invalid/empty */
+function isInvalidSubmission(code: string): { invalid: boolean; reason?: string } {
+	const trimmed = code.trim();
+
+	// Empty or nearly empty
+	if (trimmed.length < 10) {
+		return { invalid: true, reason: 'Submission is empty or too short.' };
+	}
+
+	// Just a comment
+	if (trimmed.startsWith('<!--') && trimmed.endsWith('-->') && !trimmed.includes('<')) {
+		return { invalid: true, reason: 'Submission contains only comments.' };
+	}
+
+	// No actual content (just whitespace/newlines after stripping comments)
+	const withoutComments = trimmed.replace(/<!--[\s\S]*?-->/g, '').trim();
+	if (withoutComments.length < 5) {
+		return { invalid: true, reason: 'Submission has no meaningful content.' };
+	}
+
+	return { invalid: false };
+}
+
+// =============================================================================
+// MAIN JUDGE FUNCTION
+// =============================================================================
+
 /**
- * Run all agents in parallel and have orchestrator AI synthesize results.
+ * Judge a submission against reference code.
+ * Uses parallel agents and weighted average (no orchestrator LLM call).
  */
 export async function judgeSubmission(context: JudgingContext): Promise<JudgingResult> {
+	const startTime = Date.now();
+
+	// Check cache first
+	const cacheKey = getCacheKey(context.referenceCode, context.submissionCode);
+	const cached = getCached(cacheKey);
+	if (cached) {
+		log.info('Cache hit for submission', { durationMs: Date.now() - startTime });
+		return cached;
+	}
+
+	// Early rejection for invalid submissions
+	const validation = isInvalidSubmission(context.submissionCode);
+	if (validation.invalid) {
+		log.info('Early rejection', { reason: validation.reason });
+		const result: JudgingResult = {
+			finalScore: 0,
+			feedback: validation.reason || 'Invalid submission.',
+			breakdown: {
+				codeAnalysis: createEmptyAnalysis('CodeAnalyzer'),
+				visualMatching: createEmptyAnalysis('VisualMatcher'),
+				interactionTesting: createEmptyAnalysis('InteractionTester')
+			},
+			aggregationMethod: 'early_rejection'
+		};
+		setCache(cacheKey, result);
+		return result;
+	}
+
 	log.info('Starting multi-agent judging', {
 		referenceLength: context.referenceCode.length,
 		submissionLength: context.submissionCode.length
 	});
 
-	const startTime = Date.now();
-
-	// Run all specialized agents in parallel
+	// Run all agents in parallel
 	const agentResults = await Promise.all(
 		agents.map(async (agent) => {
 			const agentStart = Date.now();
@@ -73,7 +169,7 @@ export async function judgeSubmission(context: JudgingContext): Promise<JudgingR
 				log.error(`${agent.name} failed`, { error: String(error) });
 				return {
 					agentName: agent.name,
-					score: 50,
+					score: CONFIG.FALLBACK_SCORE,
 					confidence: 0,
 					findings: ['Analysis failed - using neutral score']
 				} as AgentAnalysis;
@@ -81,47 +177,31 @@ export async function judgeSubmission(context: JudgingContext): Promise<JudgingR
 		})
 	);
 
-	// Map results by agent name
+	// Build result map
 	const resultMap = new Map<string, AgentAnalysis>();
 	for (const result of agentResults) {
 		resultMap.set(result.agentName, result);
 	}
 
-	// Orchestrator AI synthesizes the results
-	let finalScore = CONFIG.FALLBACK_SCORE;
-	let feedback = 'Analysis complete.';
+	// Calculate weighted average directly (no orchestrator LLM call)
+	let weightedSum = 0;
+	let totalWeight = 0;
+	const feedbackParts: string[] = [];
 
-	try {
-		const { text } = await generateText({
-			model: openrouter(CONFIG.MODEL),
-			prompt: getOrchestratorPrompt(context.referenceCode, context.submissionCode, agentResults),
-			maxOutputTokens: CONFIG.MAX_OUTPUT_TOKENS
-		});
+	for (const result of agentResults) {
+		const baseWeight = CONFIG.WEIGHTS[result.agentName] ?? 0.33;
+		const weight = baseWeight * Math.max(0.1, result.confidence); // Min 10% confidence
+		weightedSum += result.score * weight;
+		totalWeight += weight;
 
-		const match = text.match(/\{[\s\S]*\}/);
-		if (match) {
-			const parsed = JSON.parse(match[0]);
-			finalScore = Math.max(0, Math.min(100, Math.round(parsed.finalScore ?? CONFIG.FALLBACK_SCORE)));
-			feedback = parsed.feedback || feedback;
-
-			log.debug('Orchestrator reasoning', { reasoning: parsed.reasoning });
+		// Collect first finding from each agent for feedback
+		if (result.findings.length > 0) {
+			feedbackParts.push(result.findings[0]);
 		}
-	} catch (error) {
-		log.error('Orchestrator synthesis failed, using weighted average', { error: String(error) });
-
-		// Fallback: simple weighted average using configured weights
-		let weightedSum = 0;
-		let totalWeight = 0;
-
-		for (const result of agentResults) {
-			const weight = (CONFIG.FALLBACK_WEIGHTS[result.agentName] ?? 0.33) * result.confidence;
-			weightedSum += result.score * weight;
-			totalWeight += weight;
-		}
-
-		finalScore = totalWeight > 0 ? Math.round(weightedSum / totalWeight) : CONFIG.FALLBACK_SCORE;
-		feedback = agentResults.flatMap((r) => r.findings.slice(0, 1)).join(' ') || 'Analysis complete.';
 	}
+
+	const finalScore = totalWeight > 0 ? Math.round(weightedSum / totalWeight) : CONFIG.FALLBACK_SCORE;
+	const feedback = feedbackParts.join(' ') || 'Analysis complete.';
 
 	const duration = Date.now() - startTime;
 	log.info('Multi-agent judging complete', {
@@ -130,7 +210,7 @@ export async function judgeSubmission(context: JudgingContext): Promise<JudgingR
 		agentScores: agentResults.map((r) => ({ name: r.agentName, score: r.score }))
 	});
 
-	return {
+	const result: JudgingResult = {
 		finalScore,
 		feedback,
 		breakdown: {
@@ -140,8 +220,14 @@ export async function judgeSubmission(context: JudgingContext): Promise<JudgingR
 		},
 		aggregationMethod: 'weighted_average'
 	};
+
+	// Cache the result
+	setCache(cacheKey, result);
+
+	return result;
 }
 
+/** Create empty analysis for missing agents */
 function createEmptyAnalysis(agentName: string): AgentAnalysis {
 	return {
 		agentName,

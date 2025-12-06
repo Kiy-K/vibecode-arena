@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
@@ -8,35 +7,31 @@
 	import { usePlayerName } from '$lib/hooks/usePlayerName.svelte';
 	import { getPageMeta } from '$lib/config/seo';
 
-	let { form } = $props();
-
-	const player = usePlayerName();
-	let loading = $state(false);
 	const meta = getPageMeta({
 		title: 'join room',
 		description:
 			'join an existing vibecode arena room and compete in ai-assisted coding challenges with friends.'
 	});
 
+	let formEl: HTMLFormElement; // Reference to the form element
+
+	let { form } = $props(); // Form state from server
+	let loading = $state(false);
+
+	const player = usePlayerName();
 	// Get code from URL if provided (for direct join links)
 	let roomCode = $state(page.url.searchParams.get('code')?.toUpperCase() || '');
 
-	let formEl: HTMLFormElement;
-
-	onMount(() => {
-		function handleKeydown(e: KeyboardEvent) {
-			if (e.key === 'Escape') {
-				goto('/');
-			}
-			if (e.key === 'Enter' && !loading) {
-				e.preventDefault();
-				formEl?.requestSubmit();
-			}
+	const handleKeydown = (e: KeyboardEvent) => { 
+		if (e.key === 'Escape') goto('/');
+		if (e.key === 'Enter' && !loading) {
+			e.preventDefault();
+			formEl?.requestSubmit();
 		}
-		window.addEventListener('keydown', handleKeydown);
-		return () => window.removeEventListener('keydown', handleKeydown);
-	});
+	}
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 <svelte:head>
 	<title>{meta.title}</title>
@@ -45,9 +40,9 @@
 </svelte:head>
 
 <div class="min-h-screen bg-black text-white flex items-center justify-center p-4 md:p-8">
-	<div class="w-full max-w-4xl border border-neutral-800 flex flex-col md:flex-row min-h-[500px]">
+	<div class="w-full max-w-4xl border border-neutral-800 flex flex-col md:flex-row min-h-[500px]" style="view-transition-name: main-card;">
 		<!-- Left: Main content -->
-		<div class="flex-1 flex flex-col items-center justify-center p-8">
+		<div class="flex-1 flex flex-col items-center justify-center p-8" style="view-transition-name: main-content;">
 			<a href="/" class="self-start text-neutral-500 hover:text-white mb-8 text-sm">
 				← back <span class="text-neutral-600">[Esc]</span>
 			</a>
@@ -129,7 +124,7 @@
 										class="peer sr-only"
 									/>
 									<div
-										class="p-3 border border-neutral-800 peer-checked:border-orange-500 peer-checked:bg-orange-500/10 transition-colors h-full {model.disabled
+										class="p-3 border border-neutral-800 peer-checked:border-orange-500 peer-checked:bg-orange-500/10 peer-focus:ring-2 peer-focus:ring-orange-500/50 peer-focus:ring-offset-1 peer-focus:ring-offset-black transition-colors h-full {model.disabled
 											? ''
 											: 'hover:border-neutral-600'}"
 									>
@@ -179,7 +174,7 @@
 		</div>
 
 		<!-- Right: Info panel -->
-		<div class="hidden md:flex w-72 bg-neutral-950/50 border-l border-neutral-800 flex-col">
+		<div class="hidden md:flex w-72 bg-neutral-950/50 border-l border-neutral-800 flex-col" style="view-transition-name: side-panel;">
 			<div class="p-4 border-b border-neutral-800">
 				<div class="text-neutral-600 text-[10px] uppercase tracking-widest">how it works</div>
 			</div>

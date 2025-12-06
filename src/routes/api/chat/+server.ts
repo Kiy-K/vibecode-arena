@@ -1,3 +1,8 @@
+/**
+ * Chat API endpoint.
+ * Handles AI-assisted chat during gameplay.
+ */
+
 import type { RequestHandler } from './$types';
 import type { Challenge } from '$lib/types/game';
 
@@ -9,8 +14,8 @@ import { saveChatMessage } from '$lib/server/chat-store';
 import { streamChatResponse } from '$lib/server/ai/chat-stream';
 
 /**
- * Handle POST requests to the chat API endpoint.
- * Validates the request, saves user message, and streams AI response.
+ * POST /api/chat
+ * Validates request, saves user message, and streams AI response.
  */
 export const POST: RequestHandler = async ({ request }) => {
 	const validation = await validateChatRequest(request);
@@ -35,7 +40,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	trackPrompt(data.playerId, roundId);
 
-	// Get player context
+	// Get player context for hint tool
 	const challenge = room.currentChallenge as Challenge | undefined;
 	const player = room.players.find((p) => p.id === data.playerId);
 

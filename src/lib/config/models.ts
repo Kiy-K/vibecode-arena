@@ -1,3 +1,9 @@
+/**
+ * AI model configuration for the game.
+ * Models have different score multipliers - harder models = more points.
+ */
+
+/** Available AI models with their configurations */
 export const MODELS = [
 	// Cheap - enabled
 	{ id: 'anthropic/claude-3-haiku', name: 'Claude 3 Haiku', provider: 'Anthropic', multiplier: 1.0, disabled: false },
@@ -15,8 +21,10 @@ export const MODELS = [
 	{ id: 'openai/gpt-5.1', name: 'GPT-5.1', provider: 'OpenAI', multiplier: 0.9, disabled: true },
 ] as const;
 
+/** Type for valid model IDs */
 export type ModelId = (typeof MODELS)[number]['id'];
 
+/** Model configuration interface */
 export interface Model {
 	id: ModelId;
 	name: string;
@@ -25,17 +33,28 @@ export interface Model {
 	disabled: boolean;
 }
 
-// Get only enabled models (for backend validation)
+/** IDs of enabled models (for backend validation) */
 export const ENABLED_MODEL_IDS = MODELS.filter((m) => !m.disabled).map((m) => m.id);
 
+/**
+ * Check if a model is enabled for use.
+ * @param modelId - Model ID to check
+ */
 export function isModelEnabled(modelId: string): boolean {
 	return (ENABLED_MODEL_IDS as readonly string[]).includes(modelId);
 }
 
+/** All model IDs (tuple type for Valibot validation) */
 export const MODEL_IDS = MODELS.map((m) => m.id) as [ModelId, ...ModelId[]];
 
+/** Default model used when none is selected */
 export const DEFAULT_MODEL: ModelId = 'anthropic/claude-3-haiku';
 
+/**
+ * Get the score multiplier for a model.
+ * @param modelId - Model ID
+ * @returns Multiplier (default 1.0 if not found)
+ */
 export function getModelMultiplier(modelId: ModelId): number {
 	return MODELS.find((m) => m.id === modelId)?.multiplier ?? 1.0;
 }

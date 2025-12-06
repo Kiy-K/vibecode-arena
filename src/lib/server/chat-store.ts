@@ -1,19 +1,22 @@
+/**
+ * In-memory chat storage for player conversations.
+ * Stores chat history per player per round.
+ */
+
 import { extractCodeBlock } from '$lib/utils/code';
 import { CHAT_GREETING } from '$lib/server/ai/prompts';
 
-// Simple in-memory chat storage per player per round
+/** Chat message structure */
 interface ChatMessage {
 	id: string;
 	role: 'user' | 'assistant';
 	content: string;
 }
 
-// Map: "playerId:roundId" -> messages
+/** Chat history storage: "playerId:roundId" -> messages */
 const chatStore = new Map<string, ChatMessage[]>();
 
-/** ID for the greeting message (consistent across all chats) */
-const GREETING_MESSAGE_ID = 'greeting';
-
+/** Create composite key for player+round */
 function getKey(playerId: string, roundId: string): string {
 	return `${playerId}:${roundId}`;
 }
@@ -29,7 +32,7 @@ export function getChatHistory(playerId: string, roundId: string): ChatMessage[]
 	if (!messages || messages.length === 0) {
 		return [
 			{
-				id: GREETING_MESSAGE_ID,
+				id: "greeting",
 				role: 'assistant',
 				content: CHAT_GREETING
 			}
@@ -39,6 +42,12 @@ export function getChatHistory(playerId: string, roundId: string): ChatMessage[]
 	return messages;
 }
 
+/**
+ * Save a chat message to history.
+ * @param playerId - Player ID
+ * @param roundId - Round identifier
+ * @param message - Message to save
+ */
 export function saveChatMessage(
 	playerId: string,
 	roundId: string,
@@ -50,17 +59,33 @@ export function saveChatMessage(
 	chatStore.set(key, messages);
 }
 
+/**
+ * Clear all chat history for a player in a round.
+ * @param playerId - Player ID
+ * @param roundId - Round identifier
+ */
 export function clearChatHistory(playerId: string, roundId: string): void {
 	chatStore.delete(getKey(playerId, roundId));
 }
 
-// Get prompts used count for a player in a round
+/**
+ * Count user messages (prompts) in chat history.
+ * @param playerId - Player ID
+ * @param roundId - Round identifier
+ * @returns Number of user messages
+ */
 export function getPromptsUsed(playerId: string, roundId: string): number {
 	const messages = getChatHistory(playerId, roundId);
 	return messages.filter((m) => m.role === 'user').length;
 }
 
-// Get a specific message by ID
+/**
+ * Get a specific message by ID.
+ * @param playerId - Player ID
+ * @param roundId - Round identifier
+ * @param messageId - Message ID to find
+ * @returns The message or null if not found
+ */
 export function getMessage(
 	playerId: string,
 	roundId: string,

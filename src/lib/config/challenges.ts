@@ -1,13 +1,23 @@
+/**
+ * Challenge configuration and loading.
+ * Challenges are defined as Svelte components with metadata in HTML comments.
+ */
+
 import type { Challenge, ChallengeCategory } from '$lib/types/game';
 
-// Auto-import all challenge components (raw source)
+/** Auto-import all challenge components (raw source) */
 const challengeFiles = import.meta.glob('$lib/components/challenges/*.svelte', {
 	query: '?raw',
 	eager: true,
 	import: 'default'
 }) as Record<string, string>;
 
-// Parse metadata from component source
+/**
+ * Parse challenge metadata from component source.
+ * Expects HTML comment at top with @key: value pairs.
+ * @param source - Raw Svelte component source
+ * @returns Parsed challenge or null if invalid
+ */
 function parseChallenge(source: string): Challenge | null {
 	const metaMatch = source.match(/<!--([\s\S]*?)-->/);
 	if (!metaMatch) return null;
@@ -38,11 +48,16 @@ function parseChallenge(source: string): Challenge | null {
 	};
 }
 
-// Build challenges array from all files
+/** All available challenges (parsed from Svelte components) */
 export const CHALLENGES: Challenge[] = Object.values(challengeFiles)
 	.map(parseChallenge)
 	.filter((c): c is Challenge => c !== null);
 
+/**
+ * Get a random challenge, optionally excluding certain IDs.
+ * @param excludeIds - Challenge IDs to exclude (e.g., already used in game)
+ * @returns Random challenge (cycles back if all used)
+ */
 export function getRandomChallenge(excludeIds: string[] = []): Challenge {
 	const available = CHALLENGES.filter((c) => !excludeIds.includes(c.id));
 	if (available.length === 0) {
@@ -52,6 +67,11 @@ export function getRandomChallenge(excludeIds: string[] = []): Challenge {
 	return available[Math.floor(Math.random() * available.length)];
 }
 
+/**
+ * Get a challenge by its ID.
+ * @param id - Challenge ID
+ * @returns Challenge or undefined if not found
+ */
 export function getChallengeById(id: string): Challenge | undefined {
 	return CHALLENGES.find((c) => c.id === id);
 }

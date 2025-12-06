@@ -1,9 +1,14 @@
+/**
+ * Sandbox logs streaming endpoint.
+ * Provides real-time log updates via Server-Sent Events.
+ */
+
 import { SandboxManager } from '$lib/server/e2b';
 import type { RequestHandler } from './$types';
 
 /**
- * Handle GET requests to stream sandbox logs for a specific player
- * via Server-Sent Events (SSE) connection - used by the frontend to display logs in real-time
+ * GET /api/sandbox-logs?playerId=xxx
+ * Streams sandbox logs for a player via SSE.
  */
 export const GET: RequestHandler = async ({ url }) => {
 	const playerId = url.searchParams.get('playerId');

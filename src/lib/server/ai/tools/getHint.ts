@@ -21,22 +21,39 @@ export const MAX_HINTS = 3;
 /** Store for hints used per player per challenge */
 const hintsUsed = new Map<string, number>();
 
+/** Create composite key for player+challenge */
 function getHintKey(playerId: string, challengeId: string): string {
 	return `${playerId}:${challengeId}`;
 }
 
+/**
+ * Get remaining hints for a player on a challenge.
+ * @param playerId - Player ID
+ * @param challengeId - Challenge ID
+ * @returns Number of hints remaining (0 to MAX_HINTS)
+ */
 export function getHintsRemaining(playerId: string, challengeId: string): number {
 	const key = getHintKey(playerId, challengeId);
 	const used = hintsUsed.get(key) || 0;
 	return Math.max(0, MAX_HINTS - used);
 }
 
+/**
+ * Get total points spent on hints for a challenge.
+ * @param playerId - Player ID
+ * @param challengeId - Challenge ID
+ * @returns Total hint cost in points
+ */
 export function getHintCost(playerId: string, challengeId: string): number {
 	const key = getHintKey(playerId, challengeId);
 	const used = hintsUsed.get(key) || 0;
 	return used * HINT_COST;
 }
 
+/**
+ * Consume a hint for the player.
+ * @returns true if hint was used, false if none remaining
+ */
 function useHint(playerId: string, challengeId: string): boolean {
 	const key = getHintKey(playerId, challengeId);
 	const used = hintsUsed.get(key) || 0;
@@ -49,6 +66,11 @@ function useHint(playerId: string, challengeId: string): boolean {
 	return true;
 }
 
+/**
+ * Reset hint usage for a player (all challenges).
+ * Called when a new round starts.
+ * @param playerId - Player ID
+ */
 export function resetHints(playerId: string): void {
 	for (const key of hintsUsed.keys()) {
 		if (key.startsWith(`${playerId}:`)) {
@@ -57,6 +79,10 @@ export function resetHints(playerId: string): void {
 	}
 }
 
+/**
+ * Reset all hint usage globally.
+ * Called when game ends.
+ */
 export function resetAllHints(): void {
 	hintsUsed.clear();
 }
@@ -84,10 +110,10 @@ export function createHintTool(context: HintToolContext): GameTool {
 
 	return {
 		name: 'get_hint',
-		description: `Request a hint. Costs ${HINT_COST} points. Max ${MAX_HINTS} per challenge.`,
+		description: `Get a hint about the challenge. Costs ${HINT_COST} points. Max ${MAX_HINTS} per challenge. Requires ${HINT_COST}+ points.`,
 		costPoints: HINT_COST,
 		tool: tool({
-			description: `Use a hint for the current challenge. Call this when the user confirms they want a hint. Returns hint state including reference code - generate the actual hint based on the level.`,
+			description: `Call when user asks for a hint. Returns reference code and hint level. Requires at least ${HINT_COST} points.`,
 			inputSchema: z.object({}),
 			execute: async (): Promise<HintResult> => {
 				// Check if player has enough score
@@ -100,7 +126,7 @@ export function createHintTool(context: HintToolContext): GameTool {
 						maxHints: MAX_HINTS,
 						pointsCost: 0,
 						hintLevel: null,
-						guidance: `Player only has ${playerScore} points but hints cost ${HINT_COST}. Tell them they need to earn more points first.`,
+						guidance: `You need at least ${HINT_COST} points to use a hint. Current score: ${playerScore}.`,
 						insufficientScore: true
 					};
 				}

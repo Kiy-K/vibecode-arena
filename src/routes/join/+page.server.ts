@@ -1,6 +1,7 @@
+import type { Actions } from './$types';
+
 import { fail, redirect } from '@sveltejs/kit';
 import * as v from 'valibot';
-import type { Actions } from './$types';
 
 import { ENABLED_MODEL_IDS, type ModelId } from '$lib/config/models';
 import { roomEvents } from '$lib/server/events';

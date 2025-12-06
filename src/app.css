@@ -15,6 +15,139 @@
 	--color-orange-950: #431407;
 }
 
+/* View Transitions API - smooth page navigations */
+@view-transition {
+	navigation: auto;
+}
+
+/* Default page transition */
+::view-transition-old(root),
+::view-transition-new(root) {
+	animation-duration: 200ms;
+	animation-timing-function: ease-out;
+}
+
+/* Main card - morphs between pages (no fade, just transform) */
+::view-transition-old(main-card),
+::view-transition-new(main-card) {
+	animation-duration: 300ms;
+	animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Side panel - stays in place, content cross-fades */
+::view-transition-old(side-panel),
+::view-transition-new(side-panel) {
+	animation-duration: 250ms;
+	animation-timing-function: ease-out;
+}
+
+/* Main content - cross-fade with slight slide */
+::view-transition-old(main-content) {
+	animation: fade-slide-out 200ms ease-out forwards;
+}
+
+::view-transition-new(main-content) {
+	animation: fade-slide-in 200ms ease-out 100ms forwards;
+	opacity: 0;
+}
+
+@keyframes fade-slide-out {
+	to {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+}
+
+@keyframes fade-slide-in {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* Typography - balanced text wrapping */
+h1, h2, h3, .text-balance {
+	text-wrap: balance;
+}
+
+p, .text-pretty {
+	text-wrap: pretty;
+}
+
+/* :has() - Modern parent selectors */
+.input-group:has(input:focus, textarea:focus) {
+	border-color: color-mix(in oklch, var(--color-orange-500) 50%, transparent);
+}
+
+button:has(svg):not(:has(span)) {
+	/* Icon-only buttons get equal padding */
+	aspect-ratio: 1;
+}
+
+/* Form validation states with :has() */
+form:has(:user-invalid) button[type="submit"] {
+	opacity: 0.5;
+}
+
+/* Interactive states with :has() */
+.card:has(:focus-visible) {
+	outline: 2px solid var(--color-orange-500);
+	outline-offset: 2px;
+}
+
+/* @starting-style - Animate elements appearing */
+dialog[open] {
+	opacity: 1;
+	transform: scale(1);
+
+	@starting-style {
+		opacity: 0;
+		transform: scale(0.95);
+	}
+}
+
+[popover]:popover-open {
+	opacity: 1;
+	transform: translateY(0);
+
+	@starting-style {
+		opacity: 0;
+		transform: translateY(-8px);
+	}
+}
+
+/* Smooth transitions for dialogs/popovers */
+dialog, [popover] {
+	transition:
+		opacity 200ms ease-out,
+		transform 200ms ease-out,
+		overlay 200ms ease-out allow-discrete,
+		display 200ms ease-out allow-discrete;
+}
+
+/* Native dialog backdrop */
+dialog::backdrop {
+	background: color-mix(in oklch, black 80%, transparent);
+	backdrop-filter: blur(4px);
+}
+
+/* color-mix() for dynamic hover states */
+.btn-primary {
+	background: var(--color-orange-500);
+
+	&:hover {
+		background: color-mix(in oklch, var(--color-orange-500) 85%, white);
+	}
+
+	&:active {
+		background: color-mix(in oklch, var(--color-orange-500) 85%, black);
+	}
+}
+
 /* Speed Highlight JS - Dark theme */
 .shj-lang-js .shj-syn-unk { color: #e5e5e5 }
 .shj-lang-js .shj-syn-kwd { color: #c084fc }
@@ -108,4 +241,37 @@ html, body {
 
 .animate-slide-in {
 	animation: slide-in 0.3s ease-out;
+}
+
+/* =============================================================================
+   Performance Optimizations
+   ============================================================================= */
+
+/* content-visibility: auto - Skip rendering off-screen chat messages */
+.chat-message {
+	content-visibility: auto;
+	contain-intrinsic-size: auto 80px;
+}
+
+/* CSS Containment - Isolate layout/paint calculations */
+.code-panel,
+.chat-panel {
+	contain: layout style;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+	}
+
+	::view-transition-group(*),
+	::view-transition-old(*),
+	::view-transition-new(*) {
+		animation: none !important;
+	}
 }

@@ -18,10 +18,10 @@ import type { AgentAnalysis, JudgeAgent, JudgingContext } from './types';
 const CONFIG = {
 	/** Agent identifier */
 	NAME: 'InteractionTester',
-	/** Model to use for analysis */
-	MODEL: 'anthropic/claude-sonnet-4',
+	/** Model to use - Gemini Flash for speed */
+	MODEL: 'google/gemini-2.0-flash-001',
 	/** Maximum tokens for response */
-	MAX_OUTPUT_TOKENS: 500,
+	MAX_OUTPUT_TOKENS: 300,
 	/** Weight in final score calculation (0-1) */
 	WEIGHT: 0.25,
 	/** Default score when analysis fails */

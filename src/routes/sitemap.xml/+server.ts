@@ -8,8 +8,6 @@ import { siteConfig } from '$lib/config/seo';
 export const GET: RequestHandler = async () => {
 	const pages = [
 		{ url: '', priority: 1.0, changefreq: 'weekly' }
-		// Add more public pages here as needed
-		// Room pages are excluded as they are ephemeral and noindex
 	];
 
 	const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
