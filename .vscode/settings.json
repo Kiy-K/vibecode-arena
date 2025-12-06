@@ -1,0 +1,66 @@
+{
+	// Editor
+	"editor.formatOnSave": true,
+	"editor.defaultFormatter": "esbenp.prettier-vscode",
+	"editor.codeActionsOnSave": {
+		"source.fixAll.eslint": "explicit",
+		"source.organizeImports": "never"
+	},
+	"editor.tabSize": 2,
+	"editor.insertSpaces": false,
+
+	// Files
+	"files.eol": "\n",
+	"files.trimTrailingWhitespace": true,
+	"files.insertFinalNewline": true,
+	"files.exclude": {
+		"**/.svelte-kit": true,
+		"**/node_modules": true,
+		"**/build": true
+	},
+
+	// Svelte
+	"[svelte]": {
+		"editor.defaultFormatter": "svelte.svelte-vscode"
+	},
+	"svelte.enable-ts-plugin": true,
+
+	// TypeScript
+	"[typescript]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[javascript]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"typescript.preferences.importModuleSpecifier": "relative",
+	"typescript.tsdk": "node_modules/typescript/lib",
+
+	// JSON
+	"[json]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[jsonc]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+
+	// ESLint
+	"eslint.validate": ["javascript", "typescript", "svelte"],
+	"eslint.useFlatConfig": true,
+
+	// Tailwind CSS
+	"tailwindCSS.includeLanguages": {
+		"svelte": "html"
+	},
+	"tailwindCSS.experimental.classRegex": [
+		["class=\"([^\"]*)\"", "\"([^\"]*)\""],
+		["class=\\{([^}]*)\\}", "\"([^\"]*)\""]
+	],
+
+	// Search
+	"search.exclude": {
+		"**/node_modules": true,
+		"**/.svelte-kit": true,
+		"**/build": true,
+		"**/template": true
+	}
+}

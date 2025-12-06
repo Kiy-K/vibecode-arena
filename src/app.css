@@ -1,0 +1,111 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import 'tailwindcss';
+
+@theme {
+	--color-orange-50: #fff7ed;
+	--color-orange-100: #ffedd5;
+	--color-orange-200: #fed7aa;
+	--color-orange-300: #fdba74;
+	--color-orange-400: #fb923c;
+	--color-orange-500: #f80;
+	--color-orange-600: #ea580c;
+	--color-orange-700: #c2410c;
+	--color-orange-800: #9a3412;
+	--color-orange-900: #7c2d12;
+	--color-orange-950: #431407;
+}
+
+/* Speed Highlight JS - Dark theme */
+.shj-lang-js .shj-syn-unk { color: #e5e5e5 }
+.shj-lang-js .shj-syn-kwd { color: #c084fc }
+.shj-lang-js .shj-syn-str { color: #86efac }
+.shj-lang-js .shj-syn-num { color: #fbbf24 }
+.shj-lang-js .shj-syn-cmnt { color: #6b7280 }
+.shj-lang-js .shj-syn-oper { color: #f472b6 }
+.shj-lang-js .shj-syn-func { color: #60a5fa }
+.shj-lang-js .shj-syn-type { color: #2dd4bf }
+.shj-lang-js .shj-syn-var { color: #fb923c }
+.shj-lang-js .shj-syn-bool { color: #f87171 }
+
+.shj-lang-ts .shj-syn-unk { color: #e5e5e5 }
+.shj-lang-ts .shj-syn-kwd { color: #c084fc }
+.shj-lang-ts .shj-syn-str { color: #86efac }
+.shj-lang-ts .shj-syn-num { color: #fbbf24 }
+.shj-lang-ts .shj-syn-cmnt { color: #6b7280 }
+.shj-lang-ts .shj-syn-oper { color: #f472b6 }
+.shj-lang-ts .shj-syn-func { color: #60a5fa }
+.shj-lang-ts .shj-syn-type { color: #2dd4bf }
+.shj-lang-ts .shj-syn-var { color: #fb923c }
+.shj-lang-ts .shj-syn-bool { color: #f87171 }
+
+.shj-lang-py .shj-syn-unk { color: #e5e5e5 }
+.shj-lang-py .shj-syn-kwd { color: #c084fc }
+.shj-lang-py .shj-syn-str { color: #86efac }
+.shj-lang-py .shj-syn-num { color: #fbbf24 }
+.shj-lang-py .shj-syn-cmnt { color: #6b7280 }
+.shj-lang-py .shj-syn-oper { color: #f472b6 }
+.shj-lang-py .shj-syn-func { color: #60a5fa }
+.shj-lang-py .shj-syn-type { color: #2dd4bf }
+.shj-lang-py .shj-syn-var { color: #fb923c }
+.shj-lang-py .shj-syn-bool { color: #f87171 }
+
+* {
+	font-family: 'JetBrains Mono', monospace;
+}
+
+html, body {
+	background-color: #000;
+	color: #fff;
+}
+
+::-webkit-scrollbar {
+	width: 4px;
+}
+::-webkit-scrollbar-track {
+	background: #000;
+}
+::-webkit-scrollbar-thumb {
+	background: #262626;
+}
+
+::selection {
+	background: #262626;
+}
+
+.cursor-blink {
+	animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+	50% {
+		opacity: 0;
+	}
+}
+
+@keyframes fade-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes slide-in {
+	from {
+		opacity: 0;
+		transform: translateX(-20px);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
+}
+
+.animate-fade-in {
+	animation: fade-in 0.3s ease-out;
+}
+
+.animate-slide-in {
+	animation: slide-in 0.3s ease-out;
+}

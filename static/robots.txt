@@ -1,0 +1,14 @@
+# Vibecode Arena robots.txt
+# https://vibecodearena.dev
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /create
+Disallow: /join
+
+# Sitemap location
+Sitemap: https://vibecodearena.dev/sitemap.xml
+
+# Crawl delay for polite crawling
+Crawl-delay: 1

@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+.svelte-kit/
+build/
+dist/
+
+# Package manager
+package-lock.json
+pnpm-lock.yaml
+
+# Template files (maintained separately)
+template/
+
+# Patches
+patches/
+
+# Generated
+*.min.js
+*.min.css
