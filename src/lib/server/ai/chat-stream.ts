@@ -7,7 +7,7 @@ import { openrouter, CHAT_LIMITS, DEFAULT_MODEL } from './config';
 
 import { getCodingAssistantPrompt } from './prompts';
 import { getToolsForAI } from './tools';
-import { GameService } from '../game';
+import { scoring } from '../do-client';
 import { SandboxManager } from '../e2b';
 import { saveChatMessage } from '../chat-store';
 import { addPlayerWaitTime } from '../ratelimit';
@@ -19,6 +19,7 @@ const log = createLogger('ChatStream');
 interface ChatContext {
 	playerId: string;
 	roomId: string;
+	roomCode: string;
 	roundId: string;
 	model: string | undefined;
 	language: string;
@@ -35,12 +36,12 @@ interface ToolCallResult {
 /**
  * Handle hint tool result - deduct score if successful
  */
-function processHintResult(result: unknown, roomId: string, playerId: string): void {
+function processHintResult(result: unknown, roomCode: string, playerId: string): void {
 	if (!result || typeof result !== 'object') return;
 
 	const { success, pointsCost } = result as { success?: boolean; pointsCost?: number };
 	if (success && pointsCost) {
-		GameService.deductScore(roomId, playerId, pointsCost);
+		scoring.deduct(roomCode, playerId, pointsCost).catch(() => {});
 		log.info('Hint score deducted', { playerId, cost: pointsCost });
 	}
 }
@@ -68,7 +69,7 @@ function createToolHandler(
 			toolCallResults.push({ toolName: toolCall.toolName, result });
 
 			if (toolCall.toolName === 'get_hint') {
-				processHintResult(result, ctx.roomId, ctx.playerId);
+				processHintResult(result, ctx.roomCode, ctx.playerId);
 			}
 		});
 	};

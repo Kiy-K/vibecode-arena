@@ -4,7 +4,7 @@
  */
 import type { Sandbox } from 'e2b';
 import { createLogger } from '../logger';
-import { roomEvents } from '../events';
+import { sandbox } from '../do-client';
 import { SandboxManager } from './SandboxManager';
 import {
 	SERVER_STARTUP_MAX_POLLS,
@@ -19,10 +19,10 @@ const log = createLogger('SandboxRunner');
  * Start sandbox for a room.
  * Creates the sandbox and ensures Vite dev server is running.
  */
-export async function startRoomSandbox(roomId: string): Promise<void> {
+export async function startRoomSandbox(roomId: string, roomCode: string): Promise<void> {
 	const emitLog = (msg: string) => {
 		log.info(msg, { roomId });
-		roomEvents.emit(roomId, 'sandbox_log', { message: msg });
+		sandbox.emitLog(roomCode, msg).catch(() => {});
 	};
 
 	emitLog('Creating sandbox...');
@@ -101,5 +101,5 @@ export async function previewCode(
 ): Promise<{ sandboxUrl: string }> {
 	await SandboxManager.updatePlayerCode(roomId, playerId, code);
 	const sandboxUrl = SandboxManager.getPlayerUrl(roomId, playerId);
-	return { sandboxUrl: `${sandboxUrl}&t=${Date.now()}` };
+	return { sandboxUrl: sandboxUrl || '' };
 }

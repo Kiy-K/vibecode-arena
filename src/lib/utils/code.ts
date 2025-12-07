@@ -46,3 +46,14 @@ export function extractStreamingCodeBlock(content: string): string | null {
 	const partial = content.match(PARTIAL_CODE_BLOCK_REGEX);
 	return partial ? partial[1].trim() : null;
 }
+
+/**
+ * Check if content contains a complete code block (with closing ```).
+ * Used to detect when streaming code is ready for preview.
+ *
+ * @param content - The content to check
+ * @returns True if a complete code block is found
+ */
+export function isCodeBlockComplete(content: string): boolean {
+	return CODE_BLOCK_REGEX.test(content);
+}

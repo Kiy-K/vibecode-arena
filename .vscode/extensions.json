@@ -1,28 +1,12 @@
 {
 	"recommendations": [
-		// Core
 		"svelte.svelte-vscode",
 		"dbaeumer.vscode-eslint",
 		"esbenp.prettier-vscode",
-
-		// Tailwind CSS
 		"bradlc.vscode-tailwindcss",
-
-		// TypeScript
 		"ms-vscode.vscode-typescript-next",
-
-		// Editor enhancements
-		"editorconfig.editorconfig",
 		"usernamehw.errorlens",
-		"streetsidesoftware.code-spell-checker",
-
-		// Git
-		"eamodio.gitlens",
-		"mhutchie.git-graph",
-
-		// Productivity
-		"christian-kohler.path-intellisense",
-		"formulahendry.auto-rename-tag"
+		"svelte.svelte-vscode"
 	],
 	"unwantedRecommendations": []
 }

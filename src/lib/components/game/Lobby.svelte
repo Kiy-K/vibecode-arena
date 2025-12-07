@@ -4,10 +4,10 @@
 -->
 <script lang="ts">
   import { MODELS } from "$lib/config/models";
-  import type { Room } from "$lib/types/game";
+  import type { PublicRoom } from "$lib/types/game";
 
   interface Props {
-    room: Room;
+    room: PublicRoom;
     playerId: string;
     isHost: boolean;
     sandboxReady: boolean;
@@ -75,7 +75,7 @@
           <div class="flex items-center justify-between py-2">
             <div class="flex items-center gap-3">
               <span class="font-medium">{p.name}</span>
-              {#if p.id === room.hostId}
+              {#if p.id === playerId && isHost}
                 <span class="text-[10px] text-orange-500 uppercase">host</span>
               {/if}
               {#if p.id === playerId}

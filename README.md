@@ -1,38 +1,153 @@
-# sv
+# vibecode arena
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+![Banner](./static/og-image.png)
 
-## Creating a project
+Competitive multiplayer coding game where players pick an AI model and race to build UI components. Prompt your AI, watch your code render live, and outscore your friends.
 
-If you're seeing this, you've probably already done this step. Congrats!
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=fff)
+![Svelte](https://img.shields.io/badge/Svelte-FF3E00?logo=svelte&logoColor=fff)
+![Cloudflare Workers](https://img.shields.io/badge/Cloudflare%20Workers-F38020?logo=cloudflare&logoColor=fff)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-06B6D4?logo=tailwindcss&logoColor=fff)
 
-```sh
-# create a new project in the current directory
-npx sv create
+## How it works
 
-# create a new project in my-app
-npx sv create my-app
+1. **Create a room** — Get a 6-character code to share with friends
+2. **Pick your AI** — Choose from Claude, GPT, Gemini, Llama, and more (each with different score multipliers - tougher models yield higher points)
+3. **Compete in rounds** — See a reference UI component and prompt your AI to recreate it
+4. **Watch it render** — Your code runs live in a sandboxed environment
+5. **Get scored** — Points for accuracy, speed, and prompt efficiency
+
+## Tech Stack
+
+| Layer      | Technology                                                                                   |
+| ---------- | -------------------------------------------------------------------------------------------- |
+| Frontend   | [SvelteKit](https://kit.svelte.dev) + [Svelte 5](https://svelte.dev)                         |
+| Styling    | [Tailwind CSS v4](https://tailwindcss.com)                                                   |
+| Real-time  | [Cloudflare Durable Objects](https://developers.cloudflare.com/durable-objects/) + WebSocket |
+| AI         | [Vercel AI SDK](https://sdk.vercel.ai) with [OpenRouter](https://openrouter.ai)              |
+| Sandboxes  | [E2B](https://e2b.dev) for isolated code execution                                           |
+| Validation | [Valibot](https://valibot.dev)                                                               |
+
+## Project Structure
+
+```
+frontend/
+├── src/
+│   ├── routes/              # SvelteKit pages
+│   │   ├── +page.svelte     # Home / create room
+│   │   ├── join/            # Join room flow
+│   │   └── [code]/          # Game room
+│   ├── lib/
+│   │   ├── components/      # Svelte components
+│   │   │   ├── game/        # Game UI (Lobby, GameHeader, etc.)
+│   │   │   └── ui/          # Shared UI components
+│   │   ├── hooks/           # Svelte 5 runes (useGame, useChat)
+│   │   ├── config/          # Game settings, models, challenges
+│   │   ├── server/          # Server-side logic
+│   │   │   ├── ai/          # AI prompts and chat
+│   │   │   ├── do-client.ts # Durable Object client
+│   │   │   └── e2b.ts       # Sandbox management
+│   │   └── types/           # TypeScript types
+│   └── app.html
+├── worker/
+│   └── src/
+│       ├── index.ts         # Worker entry point
+│       └── GameRoom.ts      # Durable Object (game state)
+├── wrangler.toml            # Cloudflare config
+└── package.json
 ```
 
-## Developing
+## Development
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+### Prerequisites
 
-```sh
-npm run dev
+- Node.js 20+
+- [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/)
+- [E2B API key](https://e2b.dev)
+- [OpenRouter API key](https://openrouter.ai)
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
+### Setup
+
+```bash
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your API keys
+
+# Run both frontend and worker
+npm run dev:all
 ```
 
-## Building
+This starts:
 
-To create a production version of your app:
+- SvelteKit dev server on `http://localhost:5173`
+- Wrangler dev server on `http://localhost:8788`
 
-```sh
-npm run build
+### Scripts
+
+| Command              | Description                |
+| -------------------- | -------------------------- |
+| `npm run dev`        | Start SvelteKit dev server |
+| `npm run dev:worker` | Start Wrangler dev server  |
+| `npm run dev:all`    | Start both in parallel     |
+| `npm run build`      | Build for production       |
+| `npm run check`      | TypeScript + Svelte checks |
+| `npm run lint`       | ESLint                     |
+| `npm run format`     | Prettier                   |
+
+## Environment Variables
+
+```bash
+# Required
+OPENROUTER_API_KEY=sk-or-...
+E2B_API_KEY=e2b_...
+
+# Optional
+PUBLIC_DO_URL=http://localhost:8788  # Durable Object URL (default for dev)
 ```
 
-You can preview the production build with `npm run preview`.
+## Deployment
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+### Cloudflare Workers (Durable Object)
+
+```bash
+# Deploy the worker
+npm run deploy:worker
+
+# Set secrets
+wrangler secret put OPENROUTER_API_KEY
+wrangler secret put E2B_API_KEY
+```
+
+### Frontend
+
+Deploy the SvelteKit app to your preferred platform (Vercel, Cloudflare Pages, etc.)
+
+## Architecture
+
+```
+                              WebSocket (game events)
+┌──────────────┐            ┌─────────────────────────┐
+│    Browser   │◄──────────►│  Cloudflare Worker (DO) │
+└──────┬───────┘            │  - Game state           │
+       │                    │  - Room management      │
+       │ HTTP               │  - Round progression    │
+       ▼                    └───────────▲─────────────┘
+┌──────────────┐                        │
+│   SvelteKit  │────────────────────────┘ HTTP (RPC)
+│   Server     │
+│              │───────────► OpenRouter (AI chat)
+│              │───────────► E2B (sandboxes)
+└──────────────┘
+```
+
+- **Durable Object** maintains game state and broadcasts events via WebSocket
+- **SvelteKit** serves UI, proxies AI chat, manages sandboxes, and calls DO for game actions
+- **E2B** runs player code in isolated sandboxes with live preview
+- **OpenRouter** routes to Claude, GPT, Gemini, Llama, etc.
+
+## License
+
+MIT

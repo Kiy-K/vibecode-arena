@@ -4,19 +4,19 @@
 -->
 <script lang="ts">
   import { MODELS } from "$lib/config/models";
-  import type { Player } from "$lib/types/game";
+  import type { PublicPlayer } from "$lib/types/game";
 
   type PlayerStatus = 'working' | 'analysing' | 'passed' | 'failed';
 
   interface Props {
-    players: Player[];
+    players: PublicPlayer[];
     currentPlayerId: string;
     judgingPlayerIds?: Set<string>;
   }
 
   let { players, currentPlayerId, judgingPlayerIds = new Set() }: Props = $props();
 
-  function getPlayerStatus(player: Player): PlayerStatus {
+  function getPlayerStatus(player: PublicPlayer): PlayerStatus {
     // Being judged (submitted but waiting for AI analysis)
     if (judgingPlayerIds.has(player.id)) {
       return 'analysing';
@@ -25,8 +25,8 @@
     if (player.passed === true) {
       return 'passed';
     }
-    // Submitted but failed (has submissionTime but didn't pass)
-    if (player.submissionTime !== undefined && player.passed === false) {
+    // Submitted but failed
+    if (player.hasSubmitted && player.passed === false) {
       return 'failed';
     }
     // Still working

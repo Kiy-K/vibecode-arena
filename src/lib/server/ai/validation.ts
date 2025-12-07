@@ -8,7 +8,7 @@ import * as v from 'valibot';
 import type { Room } from '$lib/types/game';
 import { MODEL_IDS } from '$lib/config/models';
 import { CHAT_LIMITS } from './config';
-import { GameService } from '$lib/server/game';
+import { room } from '$lib/server/do-client';
 import { checkRateLimit, getPlayerPromptCount, incrementPlayerPrompt } from '$lib/server/ratelimit';
 
 /** Schema for validating chat API requests */
@@ -56,10 +56,21 @@ export async function validateChatRequest(request: Request): Promise<ValidationR
 
 	const { roomCode, playerId } = parsed.output;
 
-	// Validate game state
-	const access = GameService.validateChatAccess(roomCode, playerId);
-	if (!access.valid) {
-		return err(access.error, 403);
+	// Get room from DO
+	const r = await room.getFull(roomCode);
+	if (!r) {
+		return err('Room not found', 403);
+	}
+	if (r.status !== 'playing') {
+		return err('Game is not active', 403);
+	}
+
+	const player = r.players.find((p) => p.id === playerId);
+	if (!player) {
+		return err('Player not in room', 403);
+	}
+	if (player.passed) {
+		return err('Already passed this challenge', 403);
 	}
 
 	// Rate limiting
@@ -69,12 +80,12 @@ export async function validateChatRequest(request: Request): Promise<ValidationR
 	}
 
 	// Prompt count per round
-	const roundId = `${access.room.id}:${access.room.round}`;
+	const roundId = `${r.id}:${r.round}`;
 	if (getPlayerPromptCount(playerId, roundId) >= CHAT_LIMITS.maxPromptsPerRound) {
 		return err(`Max ${CHAT_LIMITS.maxPromptsPerRound} prompts/round`, 429);
 	}
 
-	return { ok: true, data: parsed.output, room: access.room, roundId };
+	return { ok: true, data: parsed.output, room: r, roundId };
 }
 
 /**

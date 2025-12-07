@@ -44,7 +44,7 @@
     as="style"
     fetchpriority="high"
   />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
 
   <!-- PWA -->
   <link rel="manifest" href="/manifest.json" />

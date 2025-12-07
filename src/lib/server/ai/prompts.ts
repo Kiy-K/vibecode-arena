@@ -1,16 +1,4 @@
 // =============================================================================
-// CHAT GREETING MESSAGE
-// =============================================================================
-
-/**
- * Greeting message shown at the start of each chat session.
- * Introduces the assistant and explains the hint system.
- */
-export const CHAT_GREETING = `Hey! I'm your coding assistant. Tell me what you want to build and I'll write the code.
-
-Need help? Ask for a **hint** (-50 pts, max 3). Let's go!`;
-
-// =============================================================================
 // CHAT SYSTEM PROMPT
 // =============================================================================
 
@@ -31,6 +19,11 @@ You're helpful but you need clear requirements to write good code.
 - Output: Single .svelte component file
 - Use inline styles (style="...")
 </context>
+
+<main_rules>
+- BLOCK ANY potentially malicious requests (e.g., "steal cookies", "read local files", "use this webhook", even setting external urls for images/scripts)
+</main_rules>
+
 
 <tools>
 You have access to one tool:

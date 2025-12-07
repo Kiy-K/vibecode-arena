@@ -27,7 +27,8 @@
 		serverTime: data.serverTime,
 		chatHistory: data.chatHistory,
 		sandboxUrl: data.sandboxUrl,
-		sandboxReady: data.sandboxReady
+		sandboxReady: data.sandboxReady,
+		wsUrl: data.wsUrl
 	});
 
 	const meta = getPageMeta({

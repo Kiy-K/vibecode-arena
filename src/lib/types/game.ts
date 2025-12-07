@@ -37,7 +37,7 @@ export interface SubmissionResult {
 	error?: string;
 }
 
-/** Player in a game room */
+/** Full player data (server-side only) */
 export interface Player {
 	id: string;
 	name: string;
@@ -57,10 +57,28 @@ export interface Player {
 	sandboxReady?: boolean;
 }
 
+/** Player data safe to send to clients */
+export interface PublicPlayer {
+	id: string;
+	name: string;
+	model: ModelId;
+	score: number;
+	/** Number of prompts used by this player */
+	promptsUsed: number;
+	/** Whether player has submitted this round */
+	hasSubmitted: boolean;
+	passed?: boolean;
+	/** Score earned this round */
+	roundScore?: number;
+	/** Sandbox URL (for viewing other players' work in review) */
+	sandboxUrl?: string;
+	screenshotUrl?: string;
+}
+
 /** Room lifecycle states */
 export type RoomStatus = 'waiting' | 'playing' | 'reviewing' | 'finished';
 
-/** Game room containing players and challenge state */
+/** Full room data (server-side only) */
 export interface Room {
 	id: string;
 	code: string;
@@ -72,6 +90,18 @@ export interface Room {
 	round: number;
 	maxRounds: number;
 	usedChallengeIds: string[];
+}
+
+/** Room data safe to send to clients */
+export interface PublicRoom {
+	code: string;
+	status: RoomStatus;
+	round: number;
+	maxRounds: number;
+	players: PublicPlayer[];
+	currentChallenge?: PublicChallenge;
+	/** Remaining time in seconds (calculated server-side) */
+	timeRemaining?: number;
 }
 
 /** Game event for logging/debugging */
@@ -89,13 +119,13 @@ export interface GameEvent {
 }
 
 // =============================================================================
-// SSE Event Data Types
+// SSE Event Data Types (use PublicRoom for client-facing events)
 // =============================================================================
 
 /** SSE: Challenge started event data */
 export interface SSEChallengeStarted {
-	room: Room;
-	challenge: Challenge;
+	room: PublicRoom;
+	challenge: PublicChallenge;
 }
 
 /** SSE: Player submitted their solution */
@@ -118,28 +148,30 @@ export interface SSEPlayerReady {
 
 /** SSE: Round ended, entering review phase */
 export interface SSERoundEnded {
-	room: Room;
+	room: PublicRoom;
+	leaderboard: PublicPlayer[];
 	reviewDuration?: number;
+	isLastRound: boolean;
 }
 
 /** SSE: Game finished */
 export interface SSEGameEnded {
-	room: Room;
+	room: PublicRoom;
+	leaderboard: PublicPlayer[];
 }
 
 /** SSE: Player joined or left room */
 export interface SSEPlayerJoinedLeft {
-	room: Room;
+	room: PublicRoom;
 }
 
 /** SSE: Room sandbox is ready */
 export interface SSERoomSandboxReady {
-	room: Room;
+	room: PublicRoom;
 }
 
-/** SSE: Individual player sandbox ready */
+/** SSE: Individual player sandbox ready (sent only to that player) */
 export interface SSESandboxReady {
-	playerId: string;
 	sandboxUrl: string;
 }
 

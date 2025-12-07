@@ -3,16 +3,16 @@
   Shows podium, rankings, and play again option.
 -->
 <script lang="ts">
-  import type { Player } from "$lib/types/game";
+  import type { PublicPlayer } from "$lib/types/game";
 
   import { onMount } from "svelte";
 	import { goto } from "$app/navigation";
   import { MODELS } from "$lib/config/models";
-	
+
   import { fireSuccessConfetti } from "$lib/utils/confetti";
 
   interface Props {
-    players: Player[];
+    players: PublicPlayer[];
     currentPlayerId?: string;
   }
 
@@ -64,7 +64,7 @@
     return { border: "border-neutral-800", bg: "", accent: "text-neutral-400", glow: "" };
   }
 
-  function displayName(player: Player): string {
+  function displayName(player: PublicPlayer): string {
     return player.id === currentPlayerId ? `${player.name} (you)` : player.name;
   }
 

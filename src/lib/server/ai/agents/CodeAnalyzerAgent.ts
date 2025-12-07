@@ -38,6 +38,10 @@ export class CodeAnalyzerAgent implements JudgeAgent {
 	name = CONFIG.NAME;
 	weight = CONFIG.WEIGHT;
 
+	/** Analyze the submission code against the reference code
+	 * @param context - Judging context with reference and submission code
+	 * @returns Analysis results including score, confidence, findings, and details
+	 */
 	async analyze(context: JudgingContext): Promise<AgentAnalysis> {
 		try {
 			const { text } = await generateText({

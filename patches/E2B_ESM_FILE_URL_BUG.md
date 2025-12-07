@@ -155,24 +155,13 @@ if (fileName.startsWith('file:')) {
 
 **Why not chosen:** `require('url')` is a core Node.js module - it will never fail. The try-catch adds unnecessary complexity.
 
-## Chosen Approach Rationale
-
-The recommended fix uses `fileURLToPath()` because:
-
-1. **Standard API** - It's the Node.js recommended way to convert file URLs to paths
-2. **Cross-platform** - Handles Windows, macOS, and Linux correctly
-3. **URL decoding** - Automatically decodes `%20` → space, etc.
-4. **Minimal** - Single line change, easy to review
-5. **Safe** - Only runs when needed (file:// URLs), no impact on CommonJS
-6. **Performant** - `require()` is cached, negligible overhead
-
 ## Workaround
 
 Until this is fixed upstream, use `patch-package`:
 
 1. Install: `npm install patch-package --save-dev`
 2. Add to package.json scripts: `"postinstall": "patch-package"`
-3. Apply the fix manually to `node_modules/e2b/dist/index.js` and `index.mjs`
+3. Copy a patch file `patches/e2b+2.8.3.patch` from the same directory as this file
 4. Run: `npx patch-package e2b`
 
 ## Related

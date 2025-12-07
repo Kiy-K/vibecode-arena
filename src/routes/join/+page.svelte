@@ -97,7 +97,7 @@
 							maxlength="20"
 							bind:value={player.name}
 							placeholder={player.placeholder}
-							class="w-full px-4 py-3 bg-black border border-neutral-800 text-white placeholder-neutral-500 focus:outline-none focus:border-orange-500/50 transition-colors"
+							class="w-full px-4 py-3 bg-black border border-neutral-800 text-white placeholder-neutral-500 focus:outline-none focus:border-orange-500/50 transition-colors lowercase"
 						/>
 						<input type="hidden" name="name" value={player.name || player.placeholder} />
 					</div>

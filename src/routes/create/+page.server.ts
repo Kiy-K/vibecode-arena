@@ -1,13 +1,12 @@
 import { fail, redirect } from '@sveltejs/kit';
 import * as v from 'valibot';
 import type { Actions } from './$types';
+import { dev } from '$app/environment';
 
 import { ENABLED_MODEL_IDS, type ModelId } from '$lib/config/models';
-import { RoomService } from '$lib/server/rooms/RoomService';
-import { roomEvents } from '$lib/server/events';
+import { room, sandbox } from '$lib/server/do-client';
 import { startRoomSandbox } from '$lib/server/e2b';
 import { createLogger } from '$lib/server/logger';
-import { sanitizeRoom } from '$lib/server/sanitize';
 
 const log = createLogger('CreateRoom');
 
@@ -16,10 +15,6 @@ const schema = v.object({
 	model: v.picklist(ENABLED_MODEL_IDS as unknown as [string, ...string[]])
 });
 
-/**
- * Actions for the create room page - handle form submission to create a new room
- * and redirect the user to the newly created room.  
- */
 export const actions: Actions = {
 	default: async ({ request, cookies }) => {
 		const formData = await request.formData();
@@ -30,31 +25,39 @@ export const actions: Actions = {
 			return fail(400, { error: 'Invalid input', issues: result.issues });
 		}
 
-		const room = RoomService.create(result.output.name, result.output.model as ModelId);
-		const playerId = room.players[0].id;
+		// Create room via DO
+		const { room: newRoom, playerId } = await room.create(
+			result.output.name,
+			result.output.model as ModelId
+		);
 
-		cookies.set(`player_${room.id}`, playerId, {
+		cookies.set(`player_${newRoom.id}`, playerId, {
 			path: '/',
 			httpOnly: true,
-			secure: true,
+			secure: !dev,
 			sameSite: 'strict',
-			maxAge: 60 * 60 * 2 // 2 hours
+			maxAge: 60 * 60 * 2
 		});
 
-		// Start room sandbox in background (ONE sandbox for the whole room!)
-		startRoomSandbox(room.id)
-			.then(() => {
-				const updatedRoom = RoomService.getById(room.id);
-				if (updatedRoom) {
-					roomEvents.emit(room.id, 'room_sandbox_ready', {
-						room: sanitizeRoom(updatedRoom)
-					});
-				}
+		// Store room code in cookie for WebSocket reconnection
+		cookies.set(`room_code`, newRoom.code, {
+			path: '/',
+			httpOnly: true,
+			secure: !dev,
+			sameSite: 'strict',
+			maxAge: 60 * 60 * 2
+		});
+
+		// Start sandbox in background (still managed by SvelteKit)
+		startRoomSandbox(newRoom.id, newRoom.code)
+			.then(async () => {
+				// Notify DO that sandbox is ready
+				await sandbox.setReady(newRoom.code, playerId).catch(() => {});
 			})
 			.catch((err) => {
-				log.error('Failed to start room sandbox', { roomId: room.id, error: String(err) });
+				log.error('Failed to start room sandbox', { roomId: newRoom.id, error: String(err) });
 			});
 
-		redirect(303, `/${room.code}`);
+		redirect(303, `/${newRoom.code}`);
 	}
 };

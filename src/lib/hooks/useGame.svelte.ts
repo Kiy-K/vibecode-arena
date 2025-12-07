@@ -1,14 +1,14 @@
 /**
  * Main game orchestration hook.
- * Combines state management, SSE events, keyboard shortcuts, and actions.
+ * Composes sub-hooks for state management and coordinates game flow.
  */
 
 import type {
 	Room,
+	PublicRoom,
+	PublicPlayer,
 	Challenge,
 	PublicChallenge,
-	Player,
-	SubmissionResult,
 	SSEChallengeStarted,
 	SSEPlayerSubmitted,
 	SSEPlayerReady,
@@ -21,15 +21,22 @@ import type {
 	SSEWaitingForJudging,
 	SSEJudgingStarted,
 	SSEJudgingFinished,
-	SSEPlayerScoreUpdated,
-	SSEJudgingComplete
+	SSEPlayerScoreUpdated
 } from '$lib/types/game';
 
-import { useChat, type ChatMessage } from '$lib/hooks/useChat.svelte';
-import { useTimer, formatTime } from '$lib/hooks/useTimer.svelte';
-import { fireSuccessConfetti } from '$lib/utils/confetti';
+import { useChat, type ChatMessage } from './useChat.svelte';
+import { useTimer, formatTime } from './useTimer.svelte';
+import { useCountdown } from './useCountdown.svelte';
+import { useGameSocket, type GameEventHandlers } from './useGameSocket.svelte';
+import { useSubmission, type CodeSource } from './useSubmission.svelte';
+import { useReview } from './useReview.svelte';
+import { useSandbox } from './useSandbox.svelte';
 
-import { startRound, submitCode, markReady, updatePreview } from '../../routes/[code]/game.remote';
+import { startRound, updatePreview } from '../../routes/[code]/game.remote';
+
+// ============================================================================
+// Types
+// ============================================================================
 
 export interface Submission {
 	playerId: string;
@@ -37,129 +44,112 @@ export interface Submission {
 	time: number;
 }
 
-export interface CodeSource {
-	messageId: string;
-	code: string;
-}
-
 export interface GameInit {
-	room: Room;
+	room: PublicRoom;
 	playerId: string;
 	isHost: boolean;
 	serverTime: number;
 	chatHistory?: ChatMessage[];
 	sandboxUrl?: string | null;
 	sandboxReady?: boolean;
+	wsUrl: string;
 }
 
+// ============================================================================
+// Main Hook
+// ============================================================================
+
 export function useGame(init: GameInit) {
+	// -------------------------------------------------------------------------
 	// Sub-hooks
+	// -------------------------------------------------------------------------
 	const timer = useTimer();
 	const chat = useChat(init.chatHistory || []);
+	const sandbox = useSandbox(init.sandboxUrl, init.sandboxReady);
+	const review = useReview(init.room.code, init.playerId);
+	const allSubmittedCountdown = useCountdown();
 
-	// Core game state
+	const submission = useSubmission({
+		roomCode: init.room.code,
+		getChallenge: () => challenge,
+		getCodeSource: () => codeSource,
+		getTimeLeft: () => timer.timeLeft,
+		stopTimer: () => timer.stop(),
+		onSandboxUrl: (url) => sandbox.setUrl(url),
+		onLog: (msg) => sandbox.addLog(msg)
+	});
+
+	// -------------------------------------------------------------------------
+	// Core State
+	// -------------------------------------------------------------------------
 	let room = $state(init.room);
 	let challenge: Challenge | PublicChallenge | null = $state(init.room.currentChallenge || null);
-	let codeSource: CodeSource | null = $state<CodeSource | null>(null);
-
-	// Submission state
-	let submitting = $state(false);
-	let submitted = $state(false);
-	let result: SubmissionResult | null = $state(null);
-	let earnedScore = $state(0);
-	let timeTaken = $state(0);
-	let showCelebration = $state(false);
-
-	// "All submitted" countdown state
-	let allSubmitted = $state(false);
-	let allSubmittedCountdown = $state(0);
-	let allSubmittedIntervalRef: ReturnType<typeof setInterval> | null = null;
-
-	// Review state
-	let reviewCountdown = $state(0);
-	let reviewIntervalRef: ReturnType<typeof setInterval> | null = null;
-	let reviewPlayers: Player[] = $state([]);
-	let readyCount = $state(0);
-	let isReady = $state(false);
-	let markingReady = $state(false);
-
-	// UI state
+	let codeSource: CodeSource | null = $state(null);
 	let submissions: Submission[] = $state([]);
 	let mobileTab: 'challenge' | 'chat' | 'code' = $state('chat');
 
-	// Sandbox state
-	let sandboxLogs: string[] = $state([]);
-	let sandboxUrl: string | null = $state(init.sandboxUrl || null);
-	let sandboxReady = $state(init.sandboxReady || false);
-
-	// Judging state (when timer hit 0 but AI analysis still running)
+	// Judging state
 	let waitingForJudging = $state(false);
 	let judgingCount = $state(0);
 	let judgingPlayerIds = $state(new Set<string>());
 
-	// Internal state
-	let logsEventSource: EventSource | null = null;
+	// UI refs
 	let textareaEl: HTMLTextAreaElement | null = null;
 	let lastPreviewedMessageId = '';
 
-	// Derived values
+	// -------------------------------------------------------------------------
+	// Derived Values
+	// -------------------------------------------------------------------------
 	const player = $derived(room.players.find((p) => p.id === init.playerId));
-	// Show streaming code while generating, otherwise show selected code
-	const activeCode = $derived(chat.streamingCode ?? codeSource?.code ?? '');
+	const activeCode = $derived(chat.streamingCode ?? (codeSource as CodeSource | null)?.code ?? '');
 
-	// Calculate remaining time from server
+	// -------------------------------------------------------------------------
+	// Helpers
+	// -------------------------------------------------------------------------
 	function calculateRemainingTime(): number {
-		if (!room.challengeStartTime || !room.currentChallenge) return 0;
-		const elapsed = Math.floor((init.serverTime - room.challengeStartTime) / 1000);
-		const remaining = room.currentChallenge.timeLimit - elapsed;
-		return Math.max(0, remaining);
+		// Use server-calculated timeRemaining if available
+		return room.timeRemaining ?? 0;
 	}
 
 	function resetRound() {
 		codeSource = null;
-		submitted = false;
-		result = null;
 		submissions = [];
-		showCelebration = false;
-		earnedScore = 0;
-		timeTaken = 0;
-		sandboxUrl = null;
-		sandboxReady = false;
-		sandboxLogs = [];
 		lastPreviewedMessageId = '';
-		reviewPlayers = [];
-		reviewCountdown = 0;
-		readyCount = 0;
-		isReady = false;
-		markingReady = false;
-		allSubmitted = false;
-		allSubmittedCountdown = 0;
 		waitingForJudging = false;
 		judgingCount = 0;
 		judgingPlayerIds = new Set();
-		// Clear any running countdown intervals
-		if (allSubmittedIntervalRef) {
-			clearInterval(allSubmittedIntervalRef);
-			allSubmittedIntervalRef = null;
-		}
-		if (reviewIntervalRef) {
-			clearInterval(reviewIntervalRef);
-			reviewIntervalRef = null;
-		}
+
+		submission.reset();
+		review.reset();
+		sandbox.reset();
+		allSubmittedCountdown.reset();
 		chat.reset();
 	}
 
-	// SSE Event Handlers
+	function focusTextarea() {
+		textareaEl?.focus();
+	}
+
+	// -------------------------------------------------------------------------
+	// Event Handlers
+	// -------------------------------------------------------------------------
 	function handleChallengeStarted(data: SSEChallengeStarted) {
-		room = data.room;
-		challenge = data.challenge;
+		// Reset round state FIRST to clear stale data
 		resetRound();
+
+		// Update room with fresh data from server (including reset player states)
+		room = {
+			...room,
+			...data.room // Take all fields from server
+		};
+		challenge = data.challenge;
 		timer.start(data.challenge.timeLimit);
-		setTimeout(() => textareaEl?.focus(), 100);
+		setTimeout(() => focusTextarea(), 100);
 	}
 
 	function handlePlayerSubmitted(data: SSEPlayerSubmitted) {
 		const submittedPlayer = room.players.find((p) => p.id === data.playerId);
+
 		if (data.passed && submittedPlayer) {
 			submissions = [
 				...submissions,
@@ -170,92 +160,75 @@ export function useGame(init: GameInit) {
 				}
 			];
 		}
+
 		room = {
 			...room,
 			players: room.players.map((p) =>
 				p.id === data.playerId
 					? {
-						...p,
-						passed: data.passed,
-						submissionTime: data.timeTaken,
-						score: data.score || p.score,
-						roundScore: data.roundScore,
-						sandboxUrl: data.sandboxUrl || p.sandboxUrl,
-						screenshotUrl: data.screenshotUrl || p.screenshotUrl
-					}
+							...p,
+							passed: data.passed,
+							hasSubmitted: true,
+							score: data.score || p.score,
+							roundScore: data.roundScore,
+							sandboxUrl: data.sandboxUrl || p.sandboxUrl,
+							screenshotUrl: data.screenshotUrl || p.screenshotUrl
+						}
 					: p
 			)
 		};
 
 		// Check if all players have submitted
-		const allHaveSubmitted = room.players.every((p) => p.submissionTime !== undefined);
-		if (allHaveSubmitted && !allSubmitted) {
-			setTimeout(() => {
-				allSubmitted = true;
-				allSubmittedCountdown = 5;
-				// Clear any existing interval before creating new one
-				if (allSubmittedIntervalRef) clearInterval(allSubmittedIntervalRef);
-				allSubmittedIntervalRef = setInterval(() => {
-					allSubmittedCountdown--;
-					if (allSubmittedCountdown <= 0 && allSubmittedIntervalRef) {
-						clearInterval(allSubmittedIntervalRef);
-						allSubmittedIntervalRef = null;
-					}
-				}, 1000);
-			}, 5000);
-		}
-	}
-
-	function handlePlayerReady(data: SSEPlayerReady) {
-		readyCount = data.readyCount;
-		// If this event is for the current player, mark them as ready
-		if (data.playerId === init.playerId) {
-			isReady = true;
+		const allHaveSubmitted = room.players.every((p) => p.hasSubmitted);
+		if (allHaveSubmitted && !allSubmittedCountdown.isActive) {
+			setTimeout(() => allSubmittedCountdown.start(5), 5000);
 		}
 	}
 
 	function handleRoundEnded(data: SSERoundEnded) {
-		room = data.room;
-		reviewPlayers = data.room.players;
+		// Update room status and use leaderboard for review
+		room = {
+			...room,
+			status: data.room.status
+		};
 		timer.stop();
-		showCelebration = false;
-
-		const reviewMs = data.reviewDuration || 10000;
-		reviewCountdown = Math.ceil(reviewMs / 1000);
-		// Clear any existing interval before creating new one
-		if (reviewIntervalRef) clearInterval(reviewIntervalRef);
-		reviewIntervalRef = setInterval(() => {
-			reviewCountdown--;
-			if (reviewCountdown <= 0 && reviewIntervalRef) {
-				clearInterval(reviewIntervalRef);
-				reviewIntervalRef = null;
-			}
-		}, 1000);
+		submission.closeCelebration();
+		// Use leaderboard which has PublicPlayer[] - pass to review
+		review.start(data.leaderboard, data.reviewDuration || 10000);
 	}
 
 	function handleGameEnded(data: SSEGameEnded) {
-		room = data.room;
+		room = {
+			...room,
+			status: data.room.status
+		};
 		timer.stop();
-		showCelebration = false;
+		submission.closeCelebration();
 	}
 
 	function handlePlayerJoinedLeft(data: SSEPlayerJoinedLeft) {
-		room = data.room;
+		// Sync players from public room
+		room = {
+			...room,
+			players: data.room.players
+		};
 	}
 
 	function handleRoomSandboxReady(data: SSERoomSandboxReady) {
-		sandboxReady = true;
-		room = data.room;
+		sandbox.setReady(true);
+		room = {
+			...room,
+			status: data.room.status
+		};
 	}
 
 	function handleSandboxReady(data: SSESandboxReady) {
-		if (data.playerId === init.playerId) {
-			sandboxUrl = data.sandboxUrl;
-		}
+		// Now sent only to the specific player, so no need to check ID
+		sandbox.setUrl(data.sandboxUrl);
 	}
 
 	function handleSandboxLog(data: SSESandboxLog) {
-		sandboxLogs = [...sandboxLogs, data.message];
+		sandbox.addLog(data.message);
 	}
 
 	function handleWaitingForJudging(data: SSEWaitingForJudging) {
@@ -273,94 +246,58 @@ export function useGame(init: GameInit) {
 		const newSet = new Set(judgingPlayerIds);
 		newSet.delete(data.playerId);
 		judgingPlayerIds = newSet;
-		// If count hits 0 and we were waiting, the round will end via SSE
 		if (data.judgingCount === 0) {
 			waitingForJudging = false;
 		}
 	}
 
 	function handlePlayerScoreUpdated(data: SSEPlayerScoreUpdated) {
-		// Update the player's score in room state
 		room = {
 			...room,
-			players: room.players.map((p) =>
-				p.id === data.playerId ? { ...p, score: data.score } : p
-			)
+			players: room.players.map((p) => (p.id === data.playerId ? { ...p, score: data.score } : p))
 		};
 	}
 
-	function handleJudgingComplete(data: SSEJudgingComplete) {
-		// Judging is done, clear waiting state - round will end after delay
+	function handleJudgingComplete() {
 		waitingForJudging = false;
 		judgingCount = 0;
 	}
 
+	// -------------------------------------------------------------------------
+	// WebSocket Setup
+	// -------------------------------------------------------------------------
+	const eventHandlers: GameEventHandlers = {
+		challenge_started: (d) => handleChallengeStarted(d as SSEChallengeStarted),
+		player_submitted: (d) => handlePlayerSubmitted(d as SSEPlayerSubmitted),
+		player_ready: (d) => {
+			const data = d as SSEPlayerReady;
+			review.handlePlayerReady(data.playerId, data.readyCount);
+		},
+		round_ended: (d) => handleRoundEnded(d as SSERoundEnded),
+		game_ended: (d) => handleGameEnded(d as SSEGameEnded),
+		player_joined: (d) => handlePlayerJoinedLeft(d as SSEPlayerJoinedLeft),
+		player_left: (d) => handlePlayerJoinedLeft(d as SSEPlayerJoinedLeft),
+		room_sandbox_ready: (d) => handleRoomSandboxReady(d as SSERoomSandboxReady),
+		sandbox_ready: (d) => handleSandboxReady(d as SSESandboxReady),
+		sandbox_log: (d) => handleSandboxLog(d as SSESandboxLog),
+		waiting_for_judging: (d) => handleWaitingForJudging(d as SSEWaitingForJudging),
+		judging_started: (d) => handleJudgingStarted(d as SSEJudgingStarted),
+		judging_finished: (d) => handleJudgingFinished(d as SSEJudgingFinished),
+		player_score_updated: (d) => handlePlayerScoreUpdated(d as SSEPlayerScoreUpdated),
+		judging_complete: () => handleJudgingComplete()
+	};
+
+	const socket = useGameSocket(init.wsUrl, eventHandlers);
+
+	// -------------------------------------------------------------------------
 	// Actions
+	// -------------------------------------------------------------------------
 	async function startGame() {
 		await startRound(room.code);
 	}
 
 	async function submit() {
-		if (submitting || submitted || !codeSource || !challenge) return;
-
-		submitting = true;
-		sandboxLogs = [];
-
-		// Freeze timer at submission time
-		timeTaken = challenge.timeLimit - timer.timeLeft;
-		timer.stop();
-
-		const logsParams = new URLSearchParams({ playerId: init.playerId });
-		logsEventSource = new EventSource(`/api/sandbox-logs?${logsParams.toString()}`);
-
-		logsEventSource.onmessage = (event) => {
-			try {
-				const msg = JSON.parse(event.data);
-				if (msg.type === 'log') {
-					sandboxLogs = [...sandboxLogs, msg.message];
-					const urlMatch = msg.message.match(/Sandbox URL: (https:\/\/[^\s]+)/);
-					if (urlMatch && !sandboxUrl) {
-						sandboxUrl = urlMatch[1];
-					}
-				}
-			} catch {
-				// Ignore malformed JSON
-			}
-		};
-
-		logsEventSource.onerror = () => {
-			// Connection error - close and clean up
-			logsEventSource?.close();
-			logsEventSource = null;
-		};
-
-		try {
-			// Send messageId instead of code - server retrieves code from chat store
-			const response = await submitCode({
-				roomCode: room.code,
-				messageId: codeSource.messageId
-			});
-			result = response.result;
-
-			if (response.result.sandboxUrl) {
-				sandboxUrl = response.result.sandboxUrl;
-			}
-
-			submitted = true;
-			earnedScore = response.roundScore;
-
-			if (response.result.passed) {
-				showCelebration = true;
-				fireSuccessConfetti();
-			}
-		} catch (err) {
-			console.error('Submit error:', err);
-			sandboxLogs = [...sandboxLogs, `ERROR: ${err}`];
-		} finally {
-			submitting = false;
-			logsEventSource?.close();
-			logsEventSource = null;
-		}
+		await submission.submit(init.playerId);
 	}
 
 	async function sendChat(e: Event) {
@@ -383,24 +320,7 @@ export function useGame(init: GameInit) {
 
 	function selectLastCode() {
 		const lastCode = chat.findLastCode();
-		if (lastCode && !submitted) codeSource = lastCode;
-	}
-
-	async function continueToNextRound() {
-		if (isReady || markingReady) return; // Prevent double-clicks
-		markingReady = true;
-		try {
-			await markReady(room.code);
-			isReady = true; // Only set after successful API call
-		} catch (err) {
-			console.error('Failed to mark ready:', err);
-		} finally {
-			markingReady = false;
-		}
-	}
-
-	function closeCelebration() {
-		showCelebration = false;
+		if (lastCode && !submission.submitted) codeSource = lastCode;
 	}
 
 	function setMobileTab(tab: 'challenge' | 'chat' | 'code') {
@@ -411,11 +331,9 @@ export function useGame(init: GameInit) {
 		textareaEl = el;
 	}
 
-	function focusTextarea() {
-		textareaEl?.focus();
-	}
-
-	// Keyboard handler
+	// -------------------------------------------------------------------------
+	// Keyboard Shortcuts
+	// -------------------------------------------------------------------------
 	function handleKeydown(e: KeyboardEvent) {
 		const isMod = e.metaKey || e.ctrlKey;
 
@@ -426,7 +344,7 @@ export function useGame(init: GameInit) {
 
 		if (isMod && e.key === 'Enter') {
 			e.preventDefault();
-			if (!submitting && !submitted && codeSource) submit();
+			if (!submission.submitting && !submission.submitted && codeSource) submit();
 		}
 
 		if (e.key === 'Escape') {
@@ -435,123 +353,75 @@ export function useGame(init: GameInit) {
 		}
 	}
 
-	// Preview effect - updates sandbox when code changes
+	// -------------------------------------------------------------------------
+	// Effects
+	// -------------------------------------------------------------------------
+
+	// Trigger preview when complete code block detected during streaming
+	$effect(() => {
+		const streamingSource = chat.streamingCodeSource;
+		if (
+			streamingSource &&
+			streamingSource.messageId !== lastPreviewedMessageId &&
+			room.status === 'playing' &&
+			!submission.submitting
+		) {
+			lastPreviewedMessageId = streamingSource.messageId;
+			updatePreview({ roomCode: room.code, messageId: streamingSource.messageId })
+				.then((res) => {
+					if (res.sandboxUrl) sandbox.setUrl(res.sandboxUrl);
+				})
+				.catch(() => {});
+		}
+	});
+
+	// Trigger preview when code is selected (fallback for non-streaming cases)
 	$effect(() => {
 		if (
 			codeSource &&
 			codeSource.messageId !== lastPreviewedMessageId &&
 			!chat.loading &&
 			room.status === 'playing' &&
-			!submitting
+			!submission.submitting
 		) {
 			lastPreviewedMessageId = codeSource.messageId;
-			// Send messageId instead of code - server retrieves code from chat store
 			updatePreview({ roomCode: room.code, messageId: codeSource.messageId })
 				.then((res) => {
-					if (res.sandboxUrl) {
-						sandboxUrl = res.sandboxUrl;
-					}
+					if (res.sandboxUrl) sandbox.setUrl(res.sandboxUrl);
 				})
-				.catch(() => { });
+				.catch(() => {});
 		}
 	});
 
-	// Setup on mount
+	// -------------------------------------------------------------------------
+	// Setup
+	// -------------------------------------------------------------------------
 	function setup() {
-		// Create SSE connection
-		const eventSource = new EventSource(`/${init.room.code}/events`);
-
-		eventSource.onmessage = (event) => {
-			try {
-				const { event: type, data } = JSON.parse(event.data);
-				switch (type) {
-					case 'challenge_started':
-						handleChallengeStarted(data);
-						break;
-					case 'player_submitted':
-						handlePlayerSubmitted(data);
-						break;
-					case 'player_ready':
-						handlePlayerReady(data);
-						break;
-					case 'round_ended':
-						handleRoundEnded(data);
-						break;
-					case 'game_ended':
-						handleGameEnded(data);
-						break;
-					case 'player_joined':
-					case 'player_left':
-						handlePlayerJoinedLeft(data);
-						break;
-					case 'room_sandbox_ready':
-						handleRoomSandboxReady(data);
-						break;
-					case 'sandbox_ready':
-						handleSandboxReady(data);
-						break;
-					case 'sandbox_log':
-						handleSandboxLog(data);
-						break;
-					case 'waiting_for_judging':
-						handleWaitingForJudging(data);
-						break;
-					case 'judging_started':
-						handleJudgingStarted(data);
-						break;
-					case 'judging_finished':
-						handleJudgingFinished(data);
-						break;
-					case 'player_score_updated':
-						handlePlayerScoreUpdated(data);
-						break;
-					case 'judging_complete':
-						handleJudgingComplete(data);
-						break;
-				}
-			} catch {
-				// Ignore malformed JSON from SSE
-			}
-		};
-
-		eventSource.onerror = () => {
-			// Connection lost - SSE will auto-reconnect
-			console.warn('SSE connection error, will auto-reconnect...');
-		};
-
+		socket.start();
 		window.addEventListener('keydown', handleKeydown);
 
 		// Resume state if already playing
 		if (room.status === 'playing') {
 			const remaining = calculateRemainingTime();
-			if (remaining > 0) {
-				timer.start(remaining);
-			}
-			if (player?.submissionTime !== undefined) {
-				submitted = true;
-			}
+			if (remaining > 0) timer.start(remaining);
+			if (player?.hasSubmitted) submission.submitted = true;
 			const lastCode = chat.findLastCode();
-			if (lastCode) {
-				codeSource = lastCode;
-			}
+			if (lastCode) codeSource = lastCode;
 			setTimeout(() => focusTextarea(), 100);
 		}
 
 		return () => {
-			eventSource.close();
+			socket.stop();
 			window.removeEventListener('keydown', handleKeydown);
-			// Clean up any running intervals
-			if (allSubmittedIntervalRef) {
-				clearInterval(allSubmittedIntervalRef);
-				allSubmittedIntervalRef = null;
-			}
-			if (reviewIntervalRef) {
-				clearInterval(reviewIntervalRef);
-				reviewIntervalRef = null;
-			}
+			allSubmittedCountdown.stop();
+			review.reset();
+			submission.destroy();
 		};
 	}
 
+	// -------------------------------------------------------------------------
+	// Return API
+	// -------------------------------------------------------------------------
 	return {
 		// Timer
 		get timeLeft() {
@@ -595,47 +465,47 @@ export function useGame(init: GameInit) {
 
 		// Submission
 		get submitting() {
-			return submitting;
+			return submission.submitting;
 		},
 		get submitted() {
-			return submitted;
+			return submission.submitted;
 		},
 		get result() {
-			return result;
+			return submission.result;
 		},
 		get earnedScore() {
-			return earnedScore;
+			return submission.earnedScore;
 		},
 		get timeTaken() {
-			return timeTaken;
+			return submission.timeTaken;
 		},
 		get showCelebration() {
-			return showCelebration;
+			return submission.showCelebration;
 		},
 
 		// All submitted
 		get allSubmitted() {
-			return allSubmitted;
+			return allSubmittedCountdown.isActive;
 		},
 		get allSubmittedCountdown() {
-			return allSubmittedCountdown;
+			return allSubmittedCountdown.value;
 		},
 
 		// Review
 		get reviewCountdown() {
-			return reviewCountdown;
+			return review.countdown;
 		},
 		get reviewPlayers() {
-			return reviewPlayers;
+			return review.players;
 		},
 		get readyCount() {
-			return readyCount;
+			return review.readyCount;
 		},
 		get isReady() {
-			return isReady;
+			return review.isReady;
 		},
 		get markingReady() {
-			return markingReady;
+			return review.markingReady;
 		},
 
 		// UI
@@ -648,16 +518,16 @@ export function useGame(init: GameInit) {
 
 		// Sandbox
 		get sandboxLogs() {
-			return sandboxLogs;
+			return sandbox.logs;
 		},
 		get sandboxUrl() {
-			return sandboxUrl;
+			return sandbox.url;
 		},
 		get sandboxReady() {
-			return sandboxReady;
+			return sandbox.ready;
 		},
 
-		// Judging state
+		// Judging
 		get waitingForJudging() {
 			return waitingForJudging;
 		},
@@ -679,9 +549,12 @@ export function useGame(init: GameInit) {
 		sendChat,
 		selectCode,
 		selectLastCode,
-		continueToNextRound,
-		closeCelebration,
+		continueToNextRound: review.continueToNextRound,
+		closeCelebration: submission.closeCelebration,
 		setMobileTab,
 		setTextareaRef
 	};
 }
+
+// Re-export for convenience
+export type { CodeSource };

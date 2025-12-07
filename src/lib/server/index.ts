@@ -3,10 +3,6 @@
  * Re-exports all server modules for cleaner imports.
  */
 
-// Services
-export { GameService } from './game';
-export { RoomService } from './rooms/RoomService';
-
 // E2B
 export { SandboxManager, startRoomSandbox, previewCode } from './e2b';
 
@@ -22,7 +18,6 @@ export {
 } from './ai/validation';
 
 // Utilities
-export { roomEvents } from './events';
 export { calculateScore } from './scoring';
 export { createLogger, logger } from './logger';
 export { env } from './env';
@@ -52,8 +47,7 @@ export { runCode } from './runner';
 
 // Challenges
 export {
-	getRandomPresetChallenge,
-	generateChallenge,
+	getShuffledChallenges,
 	CHALLENGES,
 	getChallengeById
 } from './challenges';

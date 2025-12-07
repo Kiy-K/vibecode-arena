@@ -3,7 +3,7 @@
 	Shows all player submissions with previews and rankings.
 -->
 <script lang="ts">
-	import type { Player, Challenge, PublicChallenge } from '$lib/types/game';
+	import type { Player, PublicPlayer, Challenge, PublicChallenge } from '$lib/types/game';
 
 	let {
 		players,
@@ -18,7 +18,7 @@
 		currentPlayerId,
 		onContinue
 	}: {
-		players: Player[];
+		players: (Player | PublicPlayer)[];
 		challenge: Challenge | PublicChallenge;
 		round: number;
 		maxRounds: number;
@@ -56,8 +56,14 @@
 		return 'text-neutral-500';
 	}
 
-	function displayName(player: Player): string {
+	function displayName(player: Player | PublicPlayer): string {
 		return player.id === currentPlayerId ? `${player.name} (you)` : player.name;
+	}
+
+	/** Check if player has submitted (works with both Player and PublicPlayer) */
+	function hasPlayerSubmitted(player: Player | PublicPlayer): boolean {
+		if ('hasSubmitted' in player) return player.hasSubmitted;
+		return (player as Player).submissionTime !== undefined && (player as Player).submissionTime !== -1;
 	}
 </script>
 
@@ -121,9 +127,9 @@
 									+{player.roundScore ?? 0}
 								</span>
 							</div>
-							{#if player.passed === false && player.submissionTime !== undefined}
+							{#if player.passed === false && hasPlayerSubmitted(player)}
 								<p class="text-xs text-red-400">Did not pass</p>
-							{:else if player.submissionTime === undefined || player.submissionTime === -1}
+							{:else if !hasPlayerSubmitted(player)}
 								<p class="text-xs text-neutral-500">No submission</p>
 							{/if}
 						</div>

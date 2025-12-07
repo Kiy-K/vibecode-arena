@@ -5,11 +5,11 @@
 <script lang="ts">
   import { Tooltip } from "bits-ui";
   import { MODELS } from "$lib/config/models";
-  import type { Room, Player } from "$lib/types/game";
+  import type { PublicRoom, PublicPlayer } from "$lib/types/game";
 
   interface Props {
-    room: Room;
-    player: Player | undefined;
+    room: PublicRoom;
+    player: PublicPlayer | undefined;
     timeLeft: number;
     submissions: { playerId: string }[];
     promptsUsed: number;

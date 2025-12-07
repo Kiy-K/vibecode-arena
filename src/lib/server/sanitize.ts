@@ -9,6 +9,7 @@ import type { Challenge, Room, PublicChallenge } from '$lib/types/game';
  * Strips: referenceCode (the solution), css
  */
 export function sanitizeChallenge(challenge: Challenge): PublicChallenge {
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const { referenceCode, css, ...publicChallenge } = challenge;
 	return publicChallenge;
 }

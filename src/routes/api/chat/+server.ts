@@ -47,6 +47,7 @@ export const POST: RequestHandler = async ({ request }) => {
 	return streamChatResponse({
 		playerId: data.playerId,
 		roomId: room.id,
+		roomCode: room.code,
 		roundId,
 		model: data.model,
 		language: data.language,

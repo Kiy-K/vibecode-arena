@@ -1,16 +1,29 @@
-import { mount } from 'svelte';
+import { mount, unmount } from 'svelte';
 
 const playerId = window.PLAYER_ID || 'default';
-const modules = import.meta.glob('./solutions/*.svelte');
-const modulePath = `./solutions/${playerId}.svelte`;
+const target = document.getElementById('app');
+let currentApp = null;
 
-const loader = modules[modulePath] || modules['./solutions/default.svelte'];
+async function loadSolution() {
+  try {
+    const mod = await import(`./solutions/${playerId}.svelte`);
 
-if (loader) {
-  loader().then((mod) => {
-    mount(mod.default, { target: document.getElementById('app') });
+    if (currentApp) {
+      unmount(currentApp);
+    }
+    currentApp = mount(mod.default, { target });
+  } catch (e) {
+    // File doesn't exist yet
+    target.innerHTML = '<div style="padding:20px;color:#666">Waiting for code...</div>';
+  }
+}
+
+loadSolution();
+
+// Vite/Svelte HMR will handle component updates automatically
+// For dynamic imports, we need to listen for the full-reload fallback
+if (import.meta.hot) {
+  import.meta.hot.accept(() => {
+    loadSolution();
   });
-} else {
-  document.getElementById('app').innerHTML =
-    '<div style="padding:20px;color:#666">No solution loaded</div>';
 }

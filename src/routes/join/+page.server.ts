@@ -2,11 +2,10 @@ import type { Actions } from './$types';
 
 import { fail, redirect } from '@sveltejs/kit';
 import * as v from 'valibot';
+import { dev } from '$app/environment';
 
 import { ENABLED_MODEL_IDS, type ModelId } from '$lib/config/models';
-import { roomEvents } from '$lib/server/events';
-import { RoomService } from '$lib/server/rooms/RoomService';
-import { sanitizeRoom } from '$lib/server/sanitize';
+import { room } from '$lib/server/do-client';
 
 const schema = v.object({
 	name: v.pipe(v.string(), v.minLength(1), v.maxLength(20)),
@@ -14,10 +13,6 @@ const schema = v.object({
 	code: v.pipe(v.string(), v.length(6))
 });
 
-/**
- * Actions for the join room page - handle form submission to join an existing room
- * and redirect the user to the joined room.  
- */
 export const actions: Actions = {
 	default: async ({ request, cookies }) => {
 		const formData = await request.formData();
@@ -28,29 +23,38 @@ export const actions: Actions = {
 			return fail(400, { error: 'Invalid input', issues: result.issues });
 		}
 
-		const joined = RoomService.join(
-			result.output.code.toUpperCase(),
+		const roomCode = result.output.code.toUpperCase();
+
+		// Join room via DO
+		const joined = await room.join(
+			roomCode,
 			result.output.name,
 			result.output.model as ModelId
 		);
 
-		if (!joined) {
-			return fail(404, { error: 'Room not found or game already started' });
+		if (!joined || 'error' in joined) {
+			return fail(404, { error: joined?.error || 'Room not found or game already started' });
 		}
 
 		cookies.set(`player_${joined.room.id}`, joined.playerId, {
 			path: '/',
 			httpOnly: true,
-			secure: true,
+			secure: !dev,
 			sameSite: 'strict',
-			maxAge: 60 * 60 * 2 // 2 hours
+			maxAge: 60 * 60 * 2
 		});
 
-		// Notify other players (sandbox is shared - already started by host)
-		roomEvents.emit(joined.room.id, 'player_joined', {
-			room: sanitizeRoom(joined.room)
+		// Store room code in cookie for WebSocket reconnection
+		cookies.set(`room_code`, roomCode, {
+			path: '/',
+			httpOnly: true,
+			secure: !dev,
+			sameSite: 'strict',
+			maxAge: 60 * 60 * 2
 		});
 
-		redirect(303, `/${joined.room.code}`);
+		// DO broadcasts player_joined automatically
+
+		redirect(303, `/${roomCode}`);
 	}
 };

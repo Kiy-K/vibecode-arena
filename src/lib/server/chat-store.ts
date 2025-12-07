@@ -4,7 +4,6 @@
  */
 
 import { extractCodeBlock } from '$lib/utils/code';
-import { CHAT_GREETING } from '$lib/server/ai/prompts';
 
 /** Chat message structure */
 interface ChatMessage {
@@ -14,6 +13,7 @@ interface ChatMessage {
 }
 
 /** Chat history storage: "playerId:roundId" -> messages */
+// Considering moving to a more persistent storage if needed - for now, in-memory suffices.
 const chatStore = new Map<string, ChatMessage[]>();
 
 /** Create composite key for player+round */
@@ -23,23 +23,10 @@ function getKey(playerId: string, roundId: string): string {
 
 /**
  * Get chat history for a player in a round.
- * Returns greeting message if chat is empty.
+ * Returns empty array if no messages yet (greeting is added client-side).
  */
 export function getChatHistory(playerId: string, roundId: string): ChatMessage[] {
-	const messages = chatStore.get(getKey(playerId, roundId));
-
-	// Return greeting if no messages yet
-	if (!messages || messages.length === 0) {
-		return [
-			{
-				id: "greeting",
-				role: 'assistant',
-				content: CHAT_GREETING
-			}
-		];
-	}
-
-	return messages;
+	return chatStore.get(getKey(playerId, roundId)) || [];
 }
 
 /**
@@ -48,11 +35,7 @@ export function getChatHistory(playerId: string, roundId: string): ChatMessage[]
  * @param roundId - Round identifier
  * @param message - Message to save
  */
-export function saveChatMessage(
-	playerId: string,
-	roundId: string,
-	message: ChatMessage
-): void {
+export function saveChatMessage(playerId: string, roundId: string, message: ChatMessage): void {
 	const key = getKey(playerId, roundId);
 	const messages = chatStore.get(key) || [];
 	messages.push(message);

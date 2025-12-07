@@ -1,46 +1,29 @@
 /**
  * Remote commands for game actions.
  * These are called from the client via SvelteKit's command() API.
+ * Now uses DO client for state, keeps E2B/AI logic in SvelteKit.
  */
 
 import * as v from 'valibot';
 import { error } from '@sveltejs/kit';
 import { command, getRequestEvent } from '$app/server';
 
-import { GameService } from '$lib/server/game';
-import { RoomService } from '$lib/server/rooms/RoomService';
+import { room, game, sandbox, judging } from '$lib/server/do-client';
 import { runCode } from '$lib/server/runner';
 import { startRoomSandbox, previewCode, SandboxManager } from '$lib/server/e2b';
-import { roomEvents } from '$lib/server/events';
 import { getPlayerPromptCount, addPlayerWaitTime } from '$lib/server/ratelimit';
-import { getRandomPresetChallenge } from '$lib/server/challenges';
 import { getCodeFromMessage } from '$lib/server/chat-store';
-import { sanitizeRoom, sanitizeChallenge } from '$lib/server/sanitize';
+import type { Challenge } from '$lib/types/game';
 
 // ============================================================================
 // Helpers
 // ============================================================================
 
-/**
- * Get the current player ID from cookies for a specific room.
- */
 function getPlayerId(roomId: string): string | undefined {
 	const { cookies } = getRequestEvent();
 	return cookies.get(`player_${roomId}`);
 }
 
-/**
- * Get room by code or throw 404.
- */
-function requireRoom(roomCode: string) {
-	const room = RoomService.getByCode(roomCode);
-	if (!room) error(404, 'Room not found');
-	return room;
-}
-
-/**
- * Get player ID or throw 403.
- */
 function requirePlayer(roomId: string): string {
 	const playerId = getPlayerId(roomId);
 	if (!playerId) error(403, 'Not in room');
@@ -52,74 +35,64 @@ function requirePlayer(roomId: string): string {
 // ============================================================================
 
 /**
- * Start a new round (host only).
- * Creates sandbox if needed, picks a challenge, and notifies all players.
+ * Start the game (host only).
+ * DO handles challenge selection and round progression automatically.
  */
 export const startRound = command(v.string(), async (roomCode) => {
-	const room = requireRoom(roomCode);
-	const playerId = getPlayerId(room.id);
+	const r = await room.getFull(roomCode);
+	if (!r) error(404, 'Room not found');
 
-	if (room.hostId !== playerId) {
+	const playerId = getPlayerId(r.id);
+
+	if (r.hostId !== playerId) {
 		error(403, 'Only host can start the game');
 	}
 
-	// Ensure sandbox is ready (ONE sandbox for all players)
-	if (!SandboxManager.isReady(room.id)) {
-		await startRoomSandbox(room.id);
+	// Ensure sandbox is ready (managed by SvelteKit)
+	if (!SandboxManager.isReady(r.id)) {
+		await startRoomSandbox(r.id, roomCode);
 	}
 
-	// Start game and set challenge (excluding already used challenges)
-	GameService.start(room.id);
-	const challenge = getRandomPresetChallenge(room.usedChallengeIds);
-	const updatedRoom = GameService.setChallenge(room.id, challenge);
+	// Start game via DO (automatically starts first round)
+	const updatedRoom = await game.start(roomCode);
 
 	if (!updatedRoom) {
-		error(500, 'Failed to start challenge');
+		error(500, 'Failed to start game');
 	}
 
-	// Reset player solution files and notify all players with their sandbox URLs
+	// Reset player solution files and emit sandbox URLs
 	for (const player of updatedRoom.players) {
-		// Clear the player's solution file for the new round
-		await SandboxManager.updatePlayerCode(room.id, player.id, '<!-- New round - waiting for code -->');
-
-		roomEvents.emit(room.id, 'sandbox_ready', {
-			playerId: player.id,
-			sandboxUrl: SandboxManager.getPlayerUrl(room.id, player.id)
-		});
+		await SandboxManager.updatePlayerCode(r.id, player.id, '<!-- New round - waiting for code -->');
+		const sandboxUrl = SandboxManager.getPlayerUrl(r.id, player.id);
+		if (sandboxUrl) {
+			await sandbox.emitReady(roomCode, player.id, sandboxUrl);
+		}
 	}
-
-	roomEvents.emit(room.id, 'challenge_started', {
-		room: sanitizeRoom(updatedRoom),
-		challenge: sanitizeChallenge(challenge)
-	});
 
 	return { success: true };
 });
 
 /**
  * Submit code for the current challenge.
- * Takes a messageId and retrieves the code from server-side chat store.
- * This ensures players can only submit code that came from AI responses.
+ * Retrieves code from chat store, runs judging, updates DO with result.
  */
 export const submitCode = command(
 	v.object({ roomCode: v.string(), messageId: v.string() }),
 
 	async ({ roomCode, messageId }) => {
-		const room = requireRoom(roomCode);
-		const playerId = requirePlayer(room.id);
+		// Get room from DO (includes full challenge with referenceCode)
+		const r = await room.getFull(roomCode);
+		if (!r) error(404, 'Room not found');
 
-		if (!room.currentChallenge) {
+		const playerId = requirePlayer(r.id);
+
+		if (!r.currentChallenge) {
 			error(400, 'No active challenge');
 		}
 
-		// Block new submissions if timer reached 0 and we're waiting for judging to finish
-		if (!GameService.canStartSubmission(room.id)) {
-			error(400, 'Time is up - submissions are closed');
-		}
+		const roundId = `${r.id}:${r.round}`;
 
-		const roundId = `${room.id}:${room.round}`;
-
-		// Retrieve code from server-side chat store
+		// Retrieve code from SvelteKit's chat store
 		const code = getCodeFromMessage(playerId, roundId, messageId);
 		if (!code) {
 			error(400, 'Invalid message ID or no code found in message');
@@ -127,57 +100,43 @@ export const submitCode = command(
 
 		const promptsUsed = getPlayerPromptCount(playerId, roundId);
 
-		// Mark player as being judged (before async operation)
-		GameService.startJudging(room.id, playerId);
+		// Mark player as being judged via DO
+		await judging.start(roomCode, playerId);
 
 		let result;
 		try {
-			// Track infrastructure time (sandbox + evaluation)
-			// Server-side always has full Challenge with referenceCode
-			const challenge = room.currentChallenge as import('$lib/types/game').Challenge;
+			// Run judging (still in SvelteKit - uses E2B + AI)
+			const challenge = r.currentChallenge as Challenge;
 			const infraStart = Date.now();
-			result = await runCode(code, challenge, playerId, room.id);
+			result = await runCode(code, challenge, playerId, r.id);
 			addPlayerWaitTime(playerId, roundId, Date.now() - infraStart);
+
+			// Track wait time in DO too
+			await judging.trackWaitTime(roomCode, playerId, Date.now() - infraStart);
 		} finally {
-			// Always mark judging as complete
-			GameService.finishJudging(room.id, playerId);
+			// Mark judging complete via DO
+			await judging.finish(roomCode, playerId);
 		}
 
-		// Submit and score
-		const submission = GameService.submitSolution(
-			room.id,
+		// Submit solution to DO (handles scoring + broadcast)
+		const submission = await game.submitSolution(roomCode, {
 			playerId,
-			result.passed,
+			passed: result.passed,
 			promptsUsed,
 			code,
-			result.score,
-			result.sandboxUrl,
-			result.screenshotUrl
-		);
+			similarityScore: result.score,
+			sandboxUrl: result.sandboxUrl,
+			screenshotUrl: result.screenshotUrl
+		});
 
 		if (!submission) {
 			error(400, 'Failed to submit');
 		}
 
-		const player = submission.room.players.find((p) => p.id === playerId);
-
-		// Notify room
-		roomEvents.emit(room.id, 'player_submitted', {
-			playerId,
-			passed: result.passed,
-			score: player?.score,
-			roundScore: submission.roundScore,
-			timeTaken: player?.submissionTime,
-			sandboxUrl: result.sandboxUrl,
-			screenshotUrl: result.screenshotUrl,
-			leaderboard: GameService.getLeaderboard(room.id)
-		});
-
 		return {
 			result,
-			score: player?.score ?? 0,
-			roundScore: submission.roundScore,
-			leaderboard: GameService.getLeaderboard(room.id)
+			score: submission.room.players.find((p) => p.id === playerId)?.score ?? 0,
+			roundScore: submission.roundScore
 		};
 	}
 );
@@ -186,30 +145,33 @@ export const submitCode = command(
  * Mark player as ready to continue during review phase.
  */
 export const markReady = command(v.string(), async (roomCode) => {
-	const room = requireRoom(roomCode);
-	const playerId = requirePlayer(room.id);
+	const r = await room.getFull(roomCode);
+	if (!r) error(404, 'Room not found');
 
-	GameService.markPlayerReady(room.id, playerId);
+	const playerId = requirePlayer(r.id);
+
+	await game.markReady(roomCode, playerId);
 
 	return { success: true };
 });
 
 /**
  * Preview code in sandbox without scoring.
- * Takes a messageId and retrieves the code from server-side chat store.
  */
 export const updatePreview = command(
 	v.object({ roomCode: v.string(), messageId: v.string() }),
 	async ({ roomCode, messageId }) => {
-		const room = requireRoom(roomCode);
-		const playerId = requirePlayer(room.id);
+		const r = await room.getFull(roomCode);
+		if (!r) error(404, 'Room not found');
 
-		const roundId = `${room.id}:${room.round}`;
+		const playerId = requirePlayer(r.id);
+
+		const roundId = `${r.id}:${r.round}`;
 		const code = getCodeFromMessage(playerId, roundId, messageId);
 		if (!code) {
 			error(400, 'Invalid message ID or no code found');
 		}
 
-		return await previewCode(code, playerId, room.id);
+		return await previewCode(code, playerId, r.id);
 	}
 );
