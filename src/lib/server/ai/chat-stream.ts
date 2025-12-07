@@ -11,7 +11,7 @@ import { scoring } from '../do-client';
 import { SandboxManager } from '../e2b';
 import { saveChatMessage } from '../chat-store';
 import { addPlayerWaitTime } from '../ratelimit';
-import { extractCodeBlock } from '$lib/utils/code';
+import { extractCodeBlock, isCodeBlockComplete } from '$lib/utils/code';
 import { createLogger } from '../logger';
 
 const log = createLogger('ChatStream');

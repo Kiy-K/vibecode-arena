@@ -110,44 +110,23 @@ PUBLIC_DO_URL=http://localhost:8788  # Durable Object URL (default for dev)
 
 ## Deployment
 
-### Cloudflare Workers (Durable Object)
+Everything runs on Cloudflare:
 
 ```bash
-# Deploy the worker (creates api.vibecodearena.dev)
+# Deploy the Durable Object worker (api.vibecodearena.dev)
 bun run deploy:worker
+
+# Deploy the SvelteKit app (vibecodearena.dev)
+bun run deploy:app
 ```
 
-### SvelteKit (GCP Cloud Run)
-
-The SvelteKit app runs in a Docker container on GCP Cloud Run (required because E2B SDK doesn't work in edge runtimes).
+**Environment Secrets (set via Wrangler):**
 
 ```bash
-# Build the Docker image
-docker build -t vibecode-arena .
-
-# Test locally (with worker running)
-docker run -p 3000:3000 \
-  -e E2B_API_KEY="..." \
-  -e OPENROUTER_API_KEY="..." \
-  -e WORKER_URL="http://host.docker.internal:8788" \
-  -e PUBLIC_WORKER_URL="http://localhost:8788" \
-  -e ORIGIN="http://localhost:3000" \
-  vibecode-arena
-
-# Deploy to GCP Cloud Run
-gcloud run deploy vibecode-arena \
-  --image gcr.io/YOUR_PROJECT/vibecode-arena \
-  --set-env-vars "ORIGIN=https://vibecodearena.dev"
+# For the Pages app
+wrangler pages secret put E2B_API_KEY --project-name vibecode-arena
+wrangler pages secret put OPENROUTER_API_KEY --project-name vibecode-arena
 ```
-
-**Environment Variables (Cloud Run):**
-| Variable | Description |
-|----------|-------------|
-| `E2B_API_KEY` | E2B API key |
-| `OPENROUTER_API_KEY` | OpenRouter API key |
-| `ORIGIN` | Your domain (e.g., `https://vibecodearena.dev`) |
-| `WORKER_URL` | Worker API URL (default: `https://api.vibecodearena.dev`) |
-| `PUBLIC_WORKER_URL` | Public WebSocket URL (default: same as `WORKER_URL`) |
 
 ## Architecture
 
@@ -161,27 +140,16 @@ gcloud run deploy vibecode-arena \
        ▼                    └───────────▲─────────────┘
 ┌──────────────┐                        │
 │   SvelteKit  │────────────────────────┘ HTTP (RPC)
-│   (GCP Cloud │
-│    Run)      │───────────► OpenRouter (AI chat)
+│  (Cloudflare │
+│    Pages)    │───────────► OpenRouter (AI chat)
 │              │───────────► E2B (sandboxes)
 └──────────────┘
 ```
 
 - **Durable Object** maintains game state and broadcasts events via WebSocket
-- **SvelteKit** serves UI, proxies AI chat, manages sandboxes, and calls DO for game actions
+- **SvelteKit on Cloudflare Pages** serves UI, proxies AI chat, manages sandboxes, and calls DO for game actions
 - **E2B** runs player code in isolated sandboxes with live preview
 - **OpenRouter** routes to Claude, GPT, Gemini, Llama, etc.
-
-### Why the Split Architecture?
-
-Initially, I planned to run everything on Cloudflare (SvelteKit on Pages + Durable Objects). However, mid-implementation I discovered that the [E2B SDK doesn't support Cloudflare Workers or edge runtimes](https://e2b.dev/docs/troubleshooting/sdks/workers-edge-runtime) due to transport layer incompatibilities.
-
-To save myself from the pain I landed on a hybrid approach:
-
-- **Cloudflare Workers + Durable Objects** — Real-time game state, WebSocket connections, room management
-- **GCP Cloud Run (Docker)** — SvelteKit app with E2B sandbox management and AI chat
-
-This means the SvelteKit server communicates with the Durable Object via HTTP RPC, while browsers connect directly to the Worker via WebSocket for real-time updates.
 
 ## Planned Features
 
@@ -206,16 +174,6 @@ Currently, the judge "agents" (CodeAnalyzer, VisualMatcher, InteractionTester) a
 - **Dynamic challenge generation** — LLM creates new UI challenges on the fly
 - **Difficulty scaling** — Generates easier/harder challenges based on player performance
 - **Themed rounds** — "Retro UI", "Glassmorphism", "Brutalist" themed challenge sets
-
-### Full Cloudflare Deployment
-
-Currently, the SvelteKit app runs on GCP Cloud Run because E2B's SDK doesn't support edge runtimes. I'd love to consolidate everything on Cloudflare. Potential approaches:
-
-- **E2B microservice** — Extract E2B operations into a minimal Node.js service running on Cloud Run, move everything else to Cloudflare Pages
-- **Cloudflare's `nodejs_compat`** — Keep an eye on Cloudflare's expanding Node.js compatibility; future updates might make E2B SDK work in Workers
-- **Wait for E2B edge support** — E2B might add native edge runtime support eventually
-
-The goal is to have the entire stack on Cloudflare's edge for lower latency and simpler deployment.
 
 ## License
 

@@ -16,7 +16,7 @@ const schema = v.object({
 });
 
 export const actions: Actions = {
-	default: async ({ request, cookies }) => {
+	default: async ({ request, cookies, platform }) => {
 		const formData = await request.formData();
 		const data = Object.fromEntries(formData);
 
@@ -48,8 +48,8 @@ export const actions: Actions = {
 			maxAge: 60 * 60 * 2
 		});
 
-		// Start sandbox in background (still managed by SvelteKit)
-		startRoomSandbox(newRoom.id, newRoom.code)
+		// Start sandbox in background using waitUntil to keep worker alive
+		const sandboxPromise = startRoomSandbox(newRoom.id, newRoom.code)
 			.then(async () => {
 				// Notify DO that sandbox is ready
 				await sandbox.setReady(newRoom.code, playerId).catch(() => {});
@@ -57,6 +57,11 @@ export const actions: Actions = {
 			.catch((err) => {
 				log.error('Failed to start room sandbox', { roomId: newRoom.id, error: String(err) });
 			});
+
+		// Use waitUntil to keep the worker alive for background work
+		if (platform?.context?.waitUntil) {
+			platform.context.waitUntil(sandboxPromise);
+		}
 
 		redirect(303, `/${newRoom.code}`);
 	}

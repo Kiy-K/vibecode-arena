@@ -48,21 +48,27 @@ class SandboxManagerImpl {
 
 		log.info('Creating sandbox', { roomId });
 
-		const sandbox = await Sandbox.create(TEMPLATE_ID, {
-			apiKey: env.E2B_API_KEY,
-			timeoutMs: SANDBOX_TIMEOUT_MS
-		});
+		try {
+			log.info('Calling Sandbox.create...', { roomId, template: TEMPLATE_ID });
+			const sandbox = await Sandbox.create(TEMPLATE_ID, {
+				apiKey: env.E2B_API_KEY,
+				timeoutMs: SANDBOX_TIMEOUT_MS
+			});
 
-		this.sandboxes.set(roomId, {
-			sandbox,
-			roomId,
-			createdAt: Date.now(),
-			lastActivity: Date.now(),
-			serverReady: false
-		});
+			this.sandboxes.set(roomId, {
+				sandbox,
+				roomId,
+				createdAt: Date.now(),
+				lastActivity: Date.now(),
+				serverReady: false
+			});
 
-		log.info('Sandbox created', { roomId, sandboxId: sandbox.sandboxId });
-		return sandbox;
+			log.info('Sandbox created', { roomId, sandboxId: sandbox.sandboxId });
+			return sandbox;
+		} catch (error) {
+			log.error('Sandbox.create FAILED', { roomId, error: String(error), stack: (error as Error).stack });
+			throw error;
+		}
 	}
 
 	/**

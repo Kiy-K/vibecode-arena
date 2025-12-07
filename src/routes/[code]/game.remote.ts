@@ -157,19 +157,19 @@ export const markReady = command(v.string(), async (roomCode) => {
 
 /**
  * Preview code in sandbox without scoring.
+ * Code is passed directly from client since in-memory chat store
+ * doesn't persist across edge worker instances.
  */
 export const updatePreview = command(
-	v.object({ roomCode: v.string(), messageId: v.string() }),
-	async ({ roomCode, messageId }) => {
+	v.object({ roomCode: v.string(), code: v.string() }),
+	async ({ roomCode, code }) => {
 		const r = await room.getFull(roomCode);
 		if (!r) error(404, 'Room not found');
 
 		const playerId = requirePlayer(r.id);
 
-		const roundId = `${r.id}:${r.round}`;
-		const code = getCodeFromMessage(playerId, roundId, messageId);
-		if (!code) {
-			error(400, 'Invalid message ID or no code found');
+		if (!code.trim()) {
+			error(400, 'No code provided');
 		}
 
 		return await previewCode(code, playerId, r.id);

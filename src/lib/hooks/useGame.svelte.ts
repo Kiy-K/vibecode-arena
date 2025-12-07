@@ -367,7 +367,7 @@ export function useGame(init: GameInit) {
 			!submission.submitting
 		) {
 			lastPreviewedMessageId = streamingSource.messageId;
-			updatePreview({ roomCode: room.code, messageId: streamingSource.messageId })
+			updatePreview({ roomCode: room.code, code: streamingSource.code })
 				.then((res) => {
 					if (res.sandboxUrl) sandbox.setUrl(res.sandboxUrl);
 				})
@@ -385,7 +385,7 @@ export function useGame(init: GameInit) {
 			!submission.submitting
 		) {
 			lastPreviewedMessageId = codeSource.messageId;
-			updatePreview({ roomCode: room.code, messageId: codeSource.messageId })
+			updatePreview({ roomCode: room.code, code: codeSource.code })
 				.then((res) => {
 					if (res.sandboxUrl) sandbox.setUrl(res.sandboxUrl);
 				})

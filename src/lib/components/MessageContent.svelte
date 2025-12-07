@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { Highlight } from 'svelte-highlight';
 	import { xml } from 'svelte-highlight/languages';
-	import DOMPurify from 'isomorphic-dompurify';
 	import 'highlight.js/styles/github-dark.css';
 
 	let { content }: { content: string } = $props();
@@ -10,12 +9,14 @@
 
 	/**
 	 * Sanitize text content and convert newlines to <br> tags.
-	 * Uses DOMPurify to prevent XSS attacks from AI-generated content.
+	 * Strips all HTML tags to prevent XSS attacks from AI-generated content.
 	 */
 	function sanitizeText(text: string): string {
-		// First sanitize the text to remove any malicious content
-		const clean = DOMPurify.sanitize(text, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
-		// Then convert newlines to <br> tags (safe since we stripped all HTML first)
+		// Strip all HTML tags (we don't allow any HTML in chat messages)
+		const clean = text
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;');
+		// Then convert newlines to <br> tags
 		return clean.replace(/\n/g, '<br>');
 	}
 
