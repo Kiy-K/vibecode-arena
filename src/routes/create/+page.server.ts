@@ -59,8 +59,9 @@ export const actions: Actions = {
 			});
 
 		// Use waitUntil to keep the worker alive for background work
-		if (platform?.context?.waitUntil) {
-			platform.context.waitUntil(sandboxPromise);
+		const ctx = platform as { context?: { waitUntil?: (p: Promise<unknown>) => void } } | undefined;
+		if (ctx?.context?.waitUntil) {
+			ctx.context.waitUntil(sandboxPromise);
 		}
 
 		redirect(303, `/${newRoom.code}`);
