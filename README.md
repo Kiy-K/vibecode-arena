@@ -2,7 +2,7 @@
 
 [![Banner](./static/og-image.png)](https://vibecodearena.dev)
 
-Competitive multiplayer coding game where players pick an AI model and race to build UI components. Prompt your AI, watch your code render live, and outscore your friends. Kudos to the Claude Opus 4.5 for making me able to ship this over the weekend!
+Competitive multiplayer coding game where players pick an AI model and race to build UI components. Prompt your AI, watch your code render live, and outscore your friends. Kudos to the Claude Opus 4.5 for helping me ship this over the weekend!
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=fff)
 ![Svelte](https://img.shields.io/badge/Svelte-FF3E00?logo=svelte&logoColor=fff)

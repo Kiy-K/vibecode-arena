@@ -32,8 +32,9 @@ export const actions: Actions = {
 			result.output.model as ModelId
 		);
 
-		if (!joined || 'error' in joined) {
-			return fail(404, { error: joined?.error || 'Room not found or game already started' });
+		if (!joined || 'error' in joined || !('room' in joined) || !joined.room) {
+			const errorMsg = (joined && 'error' in joined) ? joined.error : 'Room not found or game already started';
+			return fail(404, { error: errorMsg });
 		}
 
 		cookies.set(`player_${joined.room.id}`, joined.playerId, {
