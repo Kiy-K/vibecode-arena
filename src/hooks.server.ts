@@ -29,8 +29,8 @@ function getSecurityHeaders(): Record<string, string> {
 		// Content Security Policy
 		'Content-Security-Policy': [
 			"default-src 'self'",
-			// Allow inline scripts for Svelte and highlight.js
-			"script-src 'self' 'unsafe-inline'",
+			// Allow inline scripts for Svelte, highlight.js, and Cloudflare Analytics
+			"script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com",
 			// Allow inline styles for Tailwind, highlight.js, and Google Fonts
 			"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
 			// Allow images from self and E2B sandbox hosts

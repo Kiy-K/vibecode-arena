@@ -4,21 +4,20 @@ import { fail, redirect } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { dev } from '$app/environment';
 
-import { ENABLED_MODEL_IDS, type ModelId } from '$lib/config/models';
-import { room } from '$lib/server/do-client';
+import { type ModelId } from '$lib/config/models';
+import { room, sandbox } from '$lib/server/do-client';
+import { SandboxManager } from '$lib/server/e2b';
+import { joinRoomSchema } from '$lib/validation/schemas';
+import { createLogger } from '$lib/server/logger';
 
-const schema = v.object({
-	name: v.pipe(v.string(), v.minLength(1), v.maxLength(20)),
-	model: v.picklist(ENABLED_MODEL_IDS as unknown as [string, ...string[]]),
-	code: v.pipe(v.string(), v.length(6))
-});
+const log = createLogger('JoinRoom');
 
 export const actions: Actions = {
 	default: async ({ request, cookies }) => {
 		const formData = await request.formData();
 		const data = Object.fromEntries(formData);
 
-		const result = v.safeParse(schema, data);
+		const result = v.safeParse(joinRoomSchema, data);
 		if (!result.success) {
 			return fail(400, { error: 'Invalid input', issues: result.issues });
 		}
@@ -55,6 +54,16 @@ export const actions: Actions = {
 		});
 
 		// DO broadcasts player_joined automatically
+
+		// If sandbox is already ready, mark this player as ready in the DO
+		// This triggers room_sandbox_ready broadcast so the joiner gets notified
+		if (SandboxManager.isReady(joined.room.id)) {
+			log.info('Sandbox already ready, marking joiner as ready', {
+				roomCode,
+				playerId: joined.playerId
+			});
+			await sandbox.setReady(roomCode, joined.playerId).catch(() => {});
+		}
 
 		redirect(303, `/${roomCode}`);
 	}

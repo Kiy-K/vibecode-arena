@@ -2,7 +2,7 @@
 
 [![Banner](./static/og-image.png)](https://vibecodearena.dev)
 
-Competitive multiplayer coding game where players pick an AI model and race to build UI components. Prompt your AI, watch your code render live, and outscore your friends. Kudos to the Claude Opus 4.5 for helping me ship this over the weekend!
+Competitive multiplayer coding game where players pick an AI model and race to build UI components. Prompt your AI, watch your code render live, and outscore your friends. This project was created over the weekend to play with E2B's sandboxing capabilities - any feedback or contributions are welcome!
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=fff)
 ![Svelte](https://img.shields.io/badge/Svelte-FF3E00?logo=svelte&logoColor=fff)
@@ -97,6 +97,36 @@ This starts:
 | `npm run lint`       | ESLint                     |
 | `npm run format`     | Prettier                   |
 
+### Testing
+
+| Command                  | Description                                      |
+| ------------------------ | ------------------------------------------------ |
+| `bun run test`           | Run unit/integration tests (Vitest)              |
+| `bun run test:watch`     | Run tests in watch mode                          |
+| `bun run test:coverage`  | Run tests with coverage report                   |
+| `bun run test:e2e`       | Run all E2E tests (Playwright)                   |
+| `bun run test:e2e:quick` | Run E2E tests excluding sandbox tests (`@sandbox`) |
+| `bun run test:e2e:sandbox` | Run only sandbox tests (sequential)            |
+| `bun run test:e2e:ui`    | Run E2E tests with Playwright UI                 |
+
+Tests tagged with `@sandbox` require E2B API access and spin up real sandboxes.
+
+### CI/CD
+
+The project uses GitHub Actions with two workflows:
+
+**CI (`.github/workflows/ci.yml`)** — Runs on every push and PR:
+- Lint & type check
+- Unit & integration tests
+- Build verification
+- E2E tests:
+  - **On push:** Quick tests only (`test:e2e:quick`, no sandbox)
+  - **On PR:** Full tests including sandbox tests
+
+**Deploy (`.github/workflows/deploy.yml`)** — Runs after CI passes on `main`:
+- Worker deploys only if `worker/` or `wrangler.toml` changed
+- App always deploys
+
 ## Environment Variables
 
 ```bash
@@ -151,16 +181,23 @@ wrangler pages secret put OPENROUTER_API_KEY --project-name vibecode-arena
 - **E2B** runs player code in isolated sandboxes with live preview
 - **OpenRouter** routes to Claude, GPT, Gemini, Llama, etc.
 
+> **Note:** Currently using one E2B sandbox per room (shared by all players). Ideally, each player would have their own sandbox for better isolation. My E2B plan allows only 20 concurrent sandboxes, limiting the app to ~20 simultaneous rooms (or fewer if using per-player sandboxes).
+
 ## Planned Features
 
 ### Truly Agentic Judges
 
 Currently, the judge "agents" (CodeAnalyzer, VisualMatcher, InteractionTester) are single-shot LLM evaluators. The plan is to make them genuinely agentic:
 
-- **Tool use** — Agents can interact with sandboxes, take screenshots, simulate user interactions
+- **Tool use** — Agents can interact with sandboxes, take screenshots, simulate user interactions, MCPs?
 - **Observation loops** — "I'm not confident about the hover state, let me check" → takes screenshot → adjusts score
 - **Multi-step reasoning** — Break down evaluation into steps, verify assumptions
 - **Cross-agent communication** — VisualMatcher can ask InteractionTester to verify a behavior
+
+### Advanced E2B Features
+
+- **See which more advanced E2B features provide** - Further research E2B docs and try to use as many features as possible :D
+- **Different sandbox types** — Use React/Vue/Angular sandboxes for specific challenges
 
 ### Game Modes
 
@@ -168,12 +205,17 @@ Currently, the judge "agents" (CodeAnalyzer, VisualMatcher, InteractionTester) a
 - **Configurable rounds** — Set number of rounds (3, 5, 10) or play until time runs out
 - **Time limits** — Per-challenge time (30s, 60s, 120s) or total game time
 - **Difficulty levels** — Controls how strict the AI judge is and complexity of challenges
+- **No preview/code mode** — Disable live rendering and code output for hardcore mode
 
 ### AI-Generated Challenges
 
 - **Dynamic challenge generation** — LLM creates new UI challenges on the fly
 - **Difficulty scaling** — Generates easier/harder challenges based on player performance
 - **Themed rounds** — "Retro UI", "Glassmorphism", "Brutalist" themed challenge sets
+
+### Any further ideas?
+
+- Open to suggestions! Feel free to open issues or PRs with ideas.
 
 ## License
 

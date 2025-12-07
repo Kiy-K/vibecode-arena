@@ -22,7 +22,7 @@
   </script>`}
 </svelte:head>
 
-<svelte:window onkeydown={handleKeydown} />
+<svelte:window onkeydowncapture={handleKeydown} />
 
 <div class="min-h-screen bg-black text-white flex items-center justify-center p-4 md:p-8">
 	<div
@@ -79,7 +79,7 @@
 					>
 					·
 					<a
-						href="https://sdk.vercel.ai"
+						href="https://developers.cloudflare.com"
 						target="_blank"
 						class="text-orange-500 hover:text-orange-400">cloudflare</a
 					>

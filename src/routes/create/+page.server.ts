@@ -3,24 +3,20 @@ import * as v from 'valibot';
 import type { Actions } from './$types';
 import { dev } from '$app/environment';
 
-import { ENABLED_MODEL_IDS, type ModelId } from '$lib/config/models';
+import { type ModelId } from '$lib/config/models';
 import { room, sandbox } from '$lib/server/do-client';
 import { startRoomSandbox } from '$lib/server/e2b';
 import { createLogger } from '$lib/server/logger';
+import { createRoomSchema } from '$lib/validation/schemas';
 
 const log = createLogger('CreateRoom');
-
-const schema = v.object({
-	name: v.pipe(v.string(), v.minLength(1), v.maxLength(20)),
-	model: v.picklist(ENABLED_MODEL_IDS as unknown as [string, ...string[]])
-});
 
 export const actions: Actions = {
 	default: async ({ request, cookies, platform }) => {
 		const formData = await request.formData();
 		const data = Object.fromEntries(formData);
 
-		const result = v.safeParse(schema, data);
+		const result = v.safeParse(createRoomSchema, data);
 		if (!result.success) {
 			return fail(400, { error: 'Invalid input', issues: result.issues });
 		}
@@ -51,8 +47,8 @@ export const actions: Actions = {
 		// Start sandbox in background using waitUntil to keep worker alive
 		const sandboxPromise = startRoomSandbox(newRoom.id, newRoom.code)
 			.then(async () => {
-				// Notify DO that sandbox is ready
-				await sandbox.setReady(newRoom.code, playerId).catch(() => {});
+				// Notify DO that sandbox is ready for ALL players in the room
+				await sandbox.setRoomReady(newRoom.code).catch(() => {});
 			})
 			.catch((err) => {
 				log.error('Failed to start room sandbox', { roomId: newRoom.id, error: String(err) });

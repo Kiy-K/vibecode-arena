@@ -31,7 +31,7 @@
 	}
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
+<svelte:window onkeydowncapture={handleKeydown} />
 
 <svelte:head>
 	<title>{meta.title}</title>

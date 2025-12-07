@@ -5,7 +5,10 @@ import { error } from '@sveltejs/kit';
 import { room, getWebSocketUrl } from '$lib/server/do-client';
 import { getChatHistory } from '$lib/server/chat-store';
 import { SandboxManager } from '$lib/server/e2b';
+import { createLogger } from '$lib/server/logger';
 import type { Room, Player, PublicRoom, PublicPlayer, Challenge } from '$lib/types/game';
+
+const log = createLogger('GamePage');
 
 /** Sanitize player data for client */
 function sanitizePlayer(p: Player): PublicPlayer {
@@ -67,6 +70,15 @@ export const load: PageServerLoad = async ({ params, cookies }) => {
 	// Get sandbox status
 	const sandboxReady = SandboxManager.isReady(r.id);
 	const sandboxUrl = SandboxManager.getPlayerUrl(r.id, playerId);
+
+	log.info('Game page load', {
+		roomId: r.id,
+		roomCode: r.code,
+		playerId,
+		sandboxReady,
+		hasSandboxUrl: !!sandboxUrl,
+		playerCount: r.players.length
+	});
 
 	// Pass WebSocket URL for DO connection
 	const wsUrl = getWebSocketUrl(params.code, playerId);

@@ -246,6 +246,36 @@ class SandboxManagerImpl {
 			this.cleanupInterval = null;
 		}
 	}
+
+	/**
+	 * Kill all active sandboxes.
+	 * Used for test cleanup to avoid leaving sandboxes running.
+	 * @returns Number of sandboxes killed
+	 */
+	async killAll(): Promise<number> {
+		const roomIds = Array.from(this.sandboxes.keys());
+		log.info('Killing all sandboxes', { count: roomIds.length });
+
+		let killed = 0;
+		for (const roomId of roomIds) {
+			try {
+				await this.kill(roomId);
+				killed++;
+			} catch (error) {
+				log.error('Failed to kill sandbox during killAll', { roomId, error: String(error) });
+			}
+		}
+
+		log.info('All sandboxes killed', { killed, total: roomIds.length });
+		return killed;
+	}
+
+	/**
+	 * Get count of active sandboxes.
+	 */
+	getActiveCount(): number {
+		return this.sandboxes.size;
+	}
 }
 
 // Export singleton instance

@@ -194,6 +194,11 @@ export const sandbox = {
 		await rpc(roomCode, 'setPlayerSandboxReady', { playerId });
 	},
 
+	/** Mark the entire room's sandbox as ready (marks all players as ready) */
+	async setRoomReady(roomCode: string): Promise<void> {
+		await rpc(roomCode, 'setRoomSandboxReady');
+	},
+
 	/** Emit sandbox ready event with URL */
 	async emitReady(roomCode: string, playerId: string, sandboxUrl: string): Promise<void> {
 		await rpc(roomCode, 'emitSandboxReady', { playerId, sandboxUrl });

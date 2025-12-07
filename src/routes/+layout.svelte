@@ -2,7 +2,17 @@
   import "../app.css";
   import { Tooltip } from "bits-ui";
   import { onNavigate } from '$app/navigation';
+  import { dev } from '$app/environment';
   import { siteConfig, getPageMeta, getWebsiteSchema } from '$lib/config/seo';
+
+  // Unregister service workers in dev mode
+  if (dev && typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      for (const registration of registrations) {
+        registration.unregister();
+      }
+    });
+  }
 
   let { children } = $props();
 

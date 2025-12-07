@@ -26,3 +26,5 @@ pnpm-lock.yaml
 
 .wrangler
 worker/dist
+test-results/
+playwright-report/

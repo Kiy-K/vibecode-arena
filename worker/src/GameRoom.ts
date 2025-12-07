@@ -201,6 +201,8 @@ export class GameRoom extends DurableObject<Env> {
 			// Sandbox events
 			case 'setPlayerSandboxReady':
 				return this.setPlayerSandboxReady(p.playerId as string);
+			case 'setRoomSandboxReady':
+				return this.setRoomSandboxReady();
 			case 'emitSandboxReady':
 				return this.sendToPlayer(p.playerId as string, 'sandbox_ready', {
 					sandboxUrl: p.sandboxUrl
@@ -655,6 +657,24 @@ export class GameRoom extends DurableObject<Env> {
 		if (this.room?.players.every((p) => p.sandboxReady)) {
 			this.broadcast('room_sandbox_ready', { room: this.sanitizeRoom(this.room) });
 		}
+	}
+
+	/**
+	 * Mark the entire room's sandbox as ready.
+	 * Sets sandboxReady=true for ALL current players and broadcasts the event.
+	 * This is called when the E2B sandbox server is ready.
+	 */
+	private async setRoomSandboxReady() {
+		if (!this.room) return;
+
+		// Mark ALL players as sandbox ready
+		for (const player of this.room.players) {
+			player.sandboxReady = true;
+		}
+		await this.saveRoom();
+
+		// Broadcast to all connected clients
+		this.broadcast('room_sandbox_ready', { room: this.sanitizeRoom(this.room) });
 	}
 
 	private trackWaitTime(playerId: string, ms: number) {
