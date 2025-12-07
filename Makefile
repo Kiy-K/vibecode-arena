@@ -1,4 +1,4 @@
-.PHONY: dev dev-all build check lint format validate install clean deploy-worker e2b-build
+.PHONY: dev dev-all build check lint format validate install clean deploy e2b-build
 
 # Development
 dev:
@@ -13,9 +13,6 @@ dev-all:
 # Build
 build:
 	npm run build
-
-build-worker:
-	npm run build:worker
 
 # Quality
 check:
@@ -38,23 +35,36 @@ clean:
 	rm -rf .svelte-kit node_modules/.vite
 
 # Deployment
-deploy-worker:
-	npm run deploy:worker
+deploy:
+	npx wrangler deploy
 
-# E2B Template - API key needed
+deploy-secrets:
+	@echo "Enter OPENROUTER_API_KEY:" && npx wrangler secret put OPENROUTER_API_KEY
+	@echo "Enter E2B_API_KEY:" && npx wrangler secret put E2B_API_KEY
+
+# E2B Template
 e2b-build:
 	E2B_API_KEY=$$E2B_API_KEY npx tsx sandbox/build.prod.ts
 
 # Help
 help:
 	@echo "Available commands:"
-	@echo "  make dev          - Start SvelteKit dev server"
-	@echo "  make dev-worker   - Start Wrangler dev server"
-	@echo "  make dev-all      - Start both servers"
-	@echo "  make build        - Build for production"
-	@echo "  make check        - Run TypeScript checks"
-	@echo "  make lint         - Run ESLint"
-	@echo "  make format       - Format with Prettier"
-	@echo "  make validate     - Run all checks"
-	@echo "  make deploy-worker- Deploy Cloudflare Worker"
-	@echo "  make e2b-build    - Build and publish E2B template"
+	@echo ""
+	@echo "Development:"
+	@echo "  make dev            - Start SvelteKit dev server"
+	@echo "  make dev-worker     - Start Wrangler dev server"
+	@echo "  make dev-all        - Start both servers"
+	@echo ""
+	@echo "Build:"
+	@echo "  make build          - Build SvelteKit for production"
+	@echo ""
+	@echo "Quality:"
+	@echo "  make check          - Run TypeScript checks"
+	@echo "  make lint           - Run ESLint"
+	@echo "  make format         - Format with Prettier"
+	@echo "  make validate       - Run all checks"
+	@echo ""
+	@echo "Deployment:"
+	@echo "  make deploy         - Deploy Worker via wrangler"
+	@echo "  make deploy-secrets - Set Worker secrets"
+	@echo "  make e2b-build      - Build and publish E2B template"

@@ -14,9 +14,20 @@ import { getShuffledChallenges } from '$lib/server/challenges';
 // Configuration
 // ============================================================================
 
-const WORKER_URL = dev
-	? 'http://localhost:8788'
-	: (env.WORKER_URL || 'https://vibecode-arena.workers.dev');
+// Internal URL for server-to-worker calls (can be host.docker.internal in Docker)
+// Using getters to ensure env vars are read at request time, not module load time
+function getWorkerUrl(): string {
+	if (dev) return 'http://localhost:8788';
+	// Try process.env first (works better with bun), fallback to SvelteKit env
+	return process.env.WORKER_URL || env.WORKER_URL || 'https://api.vibecodearena.dev';
+}
+
+// Public URL for browser-to-worker WebSocket (must be reachable from browser)
+function getPublicWorkerUrl(): string {
+	if (dev) return 'http://localhost:8788';
+	// Try process.env first (works better with bun), fallback to SvelteKit env
+	return process.env.PUBLIC_WORKER_URL || env.PUBLIC_WORKER_URL || process.env.WORKER_URL || env.WORKER_URL || 'https://api.vibecodearena.dev';
+}
 
 // ============================================================================
 // Types
@@ -42,7 +53,7 @@ interface SubmitSolutionResult {
 // ============================================================================
 
 async function rpc<T>(roomCode: string, method: string, params?: Record<string, unknown>): Promise<T> {
-	const res = await fetch(`${WORKER_URL}/room/${roomCode}`, {
+	const res = await fetch(`${getWorkerUrl()}/room/${roomCode}`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ method, params }),
@@ -57,7 +68,7 @@ async function rpc<T>(roomCode: string, method: string, params?: Record<string, 
 }
 
 async function post<T>(path: string, body: Record<string, unknown>): Promise<T> {
-	const res = await fetch(`${WORKER_URL}${path}`, {
+	const res = await fetch(`${getWorkerUrl()}${path}`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(body),
@@ -72,7 +83,7 @@ async function post<T>(path: string, body: Record<string, unknown>): Promise<T> 
 export const room = {
 	/** Get room state (public, sanitized) */
 	async get(roomCode: string): Promise<Room | null> {
-		const res = await fetch(`${WORKER_URL}/room/${roomCode}`);
+		const res = await fetch(`${getWorkerUrl()}/room/${roomCode}`);
 		const data = await res.json() as { room: Room | null };
 		return data.room;
 	},
@@ -90,7 +101,7 @@ export const room = {
 
 	/** Join an existing room */
 	async join(roomCode: string, playerName: string, model: ModelId): Promise<{ room: Room; playerId: string } | { error: string } | null> {
-		const res = await fetch(`${WORKER_URL}/join/${roomCode}`, {
+		const res = await fetch(`${getWorkerUrl()}/join/${roomCode}`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ playerName, model }),
@@ -198,9 +209,9 @@ export const sandbox = {
 // WebSocket
 // ============================================================================
 
-/** Get WebSocket URL for real-time updates */
+/** Get WebSocket URL for real-time updates (uses public URL for browser) */
 export function getWebSocketUrl(roomCode: string, playerId: string): string {
-	const wsUrl = WORKER_URL.replace('http', 'ws');
+	const wsUrl = getPublicWorkerUrl().replace('http', 'ws');
 	return `${wsUrl}/room/${roomCode}?playerId=${playerId}`;
 }
 

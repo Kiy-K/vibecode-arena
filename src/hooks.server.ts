@@ -1,4 +1,5 @@
 import { dev } from '$app/environment';
+import { env } from '$env/dynamic/private';
 import type { Handle } from '@sveltejs/kit';
 
 /**
@@ -7,9 +8,13 @@ import type { Handle } from '@sveltejs/kit';
  */
 function getSecurityHeaders(): Record<string, string> {
 	// WebSocket URLs for DO connection + Vite HMR in dev
+	// Use PUBLIC_WORKER_URL for browser connections (falls back to WORKER_URL)
+	// Try process.env first (works better with bun), fallback to SvelteKit env
+	const publicWorkerUrl = process.env.PUBLIC_WORKER_URL || env.PUBLIC_WORKER_URL || process.env.WORKER_URL || env.WORKER_URL || 'https://api.vibecodearena.dev';
+	const wsWorkerUrl = publicWorkerUrl.replace(/^http/, 'ws');
 	const wsUrls = dev
-		? 'ws://localhost:5173 ws://localhost:8788 wss://localhost:5173 wss://localhost:8788'
-		: 'wss://vibecode-arena.workers.dev';
+		? `ws://localhost:5173 ws://localhost:8788 wss://localhost:5173 wss://localhost:8788 ${wsWorkerUrl}`
+		: wsWorkerUrl;
 
 	return {
 		// Prevent MIME type sniffing
@@ -31,7 +36,7 @@ function getSecurityHeaders(): Record<string, string> {
 			// Allow images from self and E2B sandbox hosts
 			"img-src 'self' data: blob: https://*.e2b.app",
 			// Allow connections to self, E2B, and DO worker
-			`connect-src 'self' https://*.e2b.app wss://*.e2b.app ${wsUrls}`,
+			`connect-src 'self' https://*.e2b.app wss://*.e2b.app ${publicWorkerUrl} ${wsUrls}`,
 			// Allow fonts from self and Google Fonts
 			"font-src 'self' https://fonts.gstatic.com",
 			// Allow frames from E2B sandbox hosts for preview
