@@ -20,6 +20,7 @@
 
 /** All possible game event types received via WebSocket */
 export type GameEventType =
+	| 'connected'
 	| 'challenge_started'
 	| 'player_submitted'
 	| 'player_ready'

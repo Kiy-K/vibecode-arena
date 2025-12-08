@@ -9,6 +9,7 @@ import type {
 	PublicPlayer,
 	Challenge,
 	PublicChallenge,
+	SSEConnected,
 	SSEChallengeStarted,
 	SSEPlayerSubmitted,
 	SSEPlayerReady,
@@ -263,10 +264,25 @@ export function useGame(init: GameInit) {
 		judgingCount = 0;
 	}
 
+	function handleConnected(data: SSEConnected) {
+		// Sync room state from server on (re)connect
+		room = {
+			...room,
+			...data.room
+		};
+		challenge = data.room.currentChallenge || null;
+
+		// If game is playing, restart timer with correct time from server
+		if (data.room.status === 'playing' && data.room.timeRemaining && data.room.timeRemaining > 0) {
+			timer.start(data.room.timeRemaining);
+		}
+	}
+
 	// -------------------------------------------------------------------------
 	// WebSocket Setup
 	// -------------------------------------------------------------------------
 	const eventHandlers: GameEventHandlers = {
+		connected: (d) => handleConnected(d as SSEConnected),
 		challenge_started: (d) => handleChallengeStarted(d as SSEChallengeStarted),
 		player_submitted: (d) => handlePlayerSubmitted(d as SSEPlayerSubmitted),
 		player_ready: (d) => {

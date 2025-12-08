@@ -123,6 +123,13 @@ export interface GameEvent {
 // SSE Event Data Types (use PublicRoom for client-facing events)
 // =============================================================================
 
+/** SSE: WebSocket connected event data */
+export interface SSEConnected {
+	room: PublicRoom;
+	isHost: boolean;
+	yourName?: string;
+}
+
 /** SSE: Challenge started event data */
 export interface SSEChallengeStarted {
 	room: PublicRoom;
