@@ -75,7 +75,7 @@
 					? ''
 					: 's'}...
 			{:else}
-				all players finished!
+				all players finished! the review will begin shortly.
 			{/if}
 		</div>
 	</div>
