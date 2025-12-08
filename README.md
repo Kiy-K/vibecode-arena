@@ -34,25 +34,37 @@ Competitive multiplayer coding game where players pick an AI model and race to b
 frontend/
 ├── src/
 │   ├── routes/              # SvelteKit pages
-│   │   ├── +page.svelte     # Home / create room
+│   │   ├── +page.svelte     # Home
+│   │   ├── create/          # Create room flow
 │   │   ├── join/            # Join room flow
-│   │   └── [code]/          # Game room
+│   │   ├── [code]/          # Game room (dynamic route)
+│   │   └── api/             # API endpoints
 │   ├── lib/
 │   │   ├── components/      # Svelte components
 │   │   │   ├── game/        # Game UI (Lobby, GameHeader, etc.)
-│   │   │   └── ui/          # Shared UI components
-│   │   ├── hooks/           # Svelte 5 runes (useGame, useChat)
+│   │   │   └── challenges/  # Challenge display components
+│   │   ├── hooks/           # Svelte 5 runes (useGame, useChat, etc.)
 │   │   ├── config/          # Game settings, models, challenges
-│   │   ├── server/          # Server-side logic
-│   │   │   ├── ai/          # AI prompts and chat
-│   │   │   ├── do-client.ts # Durable Object client
-│   │   │   └── e2b.ts       # Sandbox management
-│   │   └── types/           # TypeScript types
+│   │   ├── game/            # Game logic (scoring)
+│   │   ├── utils/           # Utility functions
+│   │   ├── validation/      # Valibot schemas
+│   │   ├── types/           # TypeScript types
+│   │   └── server/          # Server-side logic
+│   │       ├── ai/          # AI chat and prompts
+│   │       │   ├── agents/  # Judge agents (CodeAnalyzer, VisualMatcher, etc.)
+│   │       │   └── tools/   # AI tools (hints)
+│   │       ├── e2b/         # E2B sandbox management
+│   │       └── do-client.ts # Durable Object RPC client
 │   └── app.html
 ├── worker/
 │   └── src/
 │       ├── index.ts         # Worker entry point
 │       └── GameRoom.ts      # Durable Object (game state)
+├── tests/
+│   ├── unit/                # Unit tests (Vitest)
+│   ├── integration/         # Integration tests
+│   └── e2e/                 # E2E tests (Playwright)
+├── sandbox/                 # E2B sandbox template files
 ├── wrangler.toml            # Cloudflare config
 └── package.json
 ```
@@ -61,7 +73,7 @@ frontend/
 
 ### Prerequisites
 
-- Node.js 20+
+- [Bun](https://bun.sh) (or Node.js 20+)
 - [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/)
 - [E2B API key](https://e2b.dev)
 - [OpenRouter API key](https://openrouter.ai)
@@ -70,14 +82,14 @@ frontend/
 
 ```bash
 # Install dependencies
-npm install
+bun install
 
 # Set up environment variables
 cp .env.example .env
 # Edit .env with your API keys
 
 # Run both frontend and worker
-npm run dev:all
+bun run dev:all
 ```
 
 This starts:
@@ -89,13 +101,13 @@ This starts:
 
 | Command              | Description                |
 | -------------------- | -------------------------- |
-| `npm run dev`        | Start SvelteKit dev server |
-| `npm run dev:worker` | Start Wrangler dev server  |
-| `npm run dev:all`    | Start both in parallel     |
-| `npm run build`      | Build for production       |
-| `npm run check`      | TypeScript + Svelte checks |
-| `npm run lint`       | ESLint                     |
-| `npm run format`     | Prettier                   |
+| `bun run dev`        | Start SvelteKit dev server |
+| `bun run dev:worker` | Start Wrangler dev server  |
+| `bun run dev:all`    | Start both in parallel     |
+| `bun run build`      | Build for production       |
+| `bun run check`      | TypeScript + Svelte checks |
+| `bun run lint`       | ESLint                     |
+| `bun run format`     | Prettier                   |
 
 ### Pre-commit Hook
 
