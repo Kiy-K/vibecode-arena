@@ -34,6 +34,13 @@ I've always enjoyed playing casual multiplayer games like skribbl.io with friend
 | Sandboxes  | [E2B](https://e2b.dev) for isolated code execution                                           |
 | Validation | [Valibot](https://valibot.dev)                                                               |
 
+**Why this stack?**
+
+- **SvelteKit** — Single repo for frontend + API routes = fast prototyping. Svelte 5's runes make reactive state dead simple.
+- **Cloudflare** — Durable Objects give you stateful WebSockets at the edge without managing servers. Perfect for real-time multiplayer.
+- **OpenRouter** — One API to access all the models (Claude, GPT, Gemini, Llama). Players can pick their favorite.
+- **E2B** — Spin up sandboxes in seconds, run untrusted code safely, get a preview URL. Exactly what this game needs.
+
 ## Project Structure
 
 ```
