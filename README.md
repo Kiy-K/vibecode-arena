@@ -243,6 +243,13 @@ Currently, the judge "agents" (CodeAnalyzer, VisualMatcher, InteractionTester) a
 - **Difficulty scaling** — Generates easier/harder challenges based on player performance
 - **Themed rounds** — "Retro UI", "Glassmorphism", "Brutalist" themed challenge sets
 
+### Test Coverage
+
+- **Server code tests** — Unit tests for AI agents, E2B sandbox management, DO client
+- **Hook tests** — Svelte component tests for reactive hooks (useGame, useChat, etc.)
+- **Integration tests** — Test full game flow with mocked external services
+- **E2E tests** — Round review, leaderboard, AI chat interactions, multi-round games
+
 ### Any further ideas?
 
 - Open to suggestions! Feel free to open issues or PRs with ideas.

@@ -33,7 +33,7 @@
 		"test:watch": "svelte-kit sync && vitest",
 		"test:coverage": "svelte-kit sync && vitest run --coverage",
 		"test:e2e": "concurrently -k -s first -n 'vite,worker,test' --hide 'vite,worker' 'bun run dev' 'bun run dev:worker' 'wait-on -q tcp:5173 tcp:8788 && playwright test'",
-		"test:e2e:quick": "concurrently -k -s first -n 'vite,worker,test' --hide 'vite,worker' 'E2E_SKIP_SANDBOX=true bun run dev' 'bun run dev:worker' 'wait-on -q tcp:5173 tcp:8788 && playwright test --grep-invert @sandbox'",
+		"test:e2e:quick": "concurrently -k -s first -n 'vite,worker,test' --hide 'vite,worker' 'E2E_SKIP_SANDBOX=true bun run dev' 'bun run dev:worker' 'wait-on -q tcp:5173 tcp:8788 && playwright test --grep-invert @sandbox --workers=4'",
 		"test:e2e:sandbox": "concurrently -k -s first -n 'vite,worker,test' --hide 'vite,worker' 'bun run dev' 'bun run dev:worker' 'wait-on -q tcp:5173 tcp:8788 && playwright test --grep @sandbox'",
 		"test:e2e:ui": "concurrently -k -n 'vite,worker,ui' 'E2E_SKIP_SANDBOX=true bun run dev' 'bun run dev:worker' 'wait-on tcp:5173 tcp:8788 && playwright test --ui --grep-invert @sandbox'",
 		"test:e2e:ui:sandbox": "concurrently -k -n 'vite,worker,ui' 'bun run dev' 'bun run dev:worker' 'wait-on tcp:5173 tcp:8788 && playwright test --ui --grep @sandbox'",

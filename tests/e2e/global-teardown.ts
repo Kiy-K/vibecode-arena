@@ -4,6 +4,11 @@
  */
 
 async function globalTeardown() {
+	// Skip teardown for quick tests (no sandboxes to clean up)
+	if (process.env.E2E_SKIP_SANDBOX === 'true') {
+		return;
+	}
+
 	const baseUrl = process.env.BASE_URL || 'http://localhost:5173';
 
 	console.log('[Teardown] Cleaning up E2B sandboxes...');
