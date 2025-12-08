@@ -136,21 +136,27 @@ Commits are blocked if type errors or unfixable lint errors exist.
 
 ### Testing
 
-| Command                       | Description                                            |
-| ----------------------------- | ------------------------------------------------------ |
-| `bun run test`                | Run unit/integration tests (Vitest)                    |
-| `bun run test:watch`          | Run tests in watch mode                                |
-| `bun run test:coverage`       | Run tests with coverage report                         |
-| `bun run test:e2e`            | Run all E2E tests (Playwright)                         |
-| `bun run test:e2e:quick`      | Run E2E tests excluding `@sandbox` tests (no E2B)      |
-| `bun run test:e2e:sandbox`    | Run only `@sandbox` tests (shared sandbox, sequential) |
-| `bun run test:e2e:ui`         | Playwright UI for non-sandbox tests                    |
-| `bun run test:e2e:ui:sandbox` | Playwright UI for sandbox tests only                   |
+#### Recommended Commands for Development
+
+| Command                       | Description                              |
+| ----------------------------- | ---------------------------------------- |
+| `bun run test`                | Run unit/integration tests (Vitest)      |
+| `bun run test:e2e:ui`         | Playwright UI for non-sandbox tests only |
+| `bun run test:e2e:ui:sandbox` | Playwright UI for sandbox tests only     |
+
+#### Other Test Commands
+
+| Command                    | Description                                            |
+| -------------------------- | ------------------------------------------------------ |
+| `bun run test:watch`       | Run tests in watch mode                                |
+| `bun run test:coverage`    | Run tests with coverage report                         |
+| `bun run test:e2e:quick`   | Run E2E tests excluding `@sandbox` tests (no E2B)      |
+| `bun run test:e2e:sandbox` | Run only `@sandbox` tests (shared sandbox, sequential) |
 
 **Test Categories:**
 
-- **Quick tests** (`test:e2e:quick`) — Lobby, forms, errors, navigation. No E2B API needed, runs fast.
-- **Sandbox tests** (`test:e2e:sandbox`) — Full game flow with real E2B sandboxes. Tests share ONE sandbox via worker-scoped fixture to avoid rate limits.
+- **Quick tests (CI)** (`test:e2e:quick`) — Lobby, forms, errors, navigation. No E2B API needed, runs fast.
+- **Sandbox tests (CI)** (`test:e2e:sandbox`) — Full game flow with real E2B sandboxes. Tests share ONE sandbox via worker-scoped fixture to avoid rate limits.
 
 Tests tagged with `@sandbox` require `E2B_API_KEY` and spin up real sandboxes.
 
@@ -165,7 +171,7 @@ The project uses GitHub Actions with two workflows:
 - Build verification
 - E2E tests:
   - **On push:** Quick tests only (`test:e2e:quick`, no sandbox)
-  - **On PR:** Full tests including sandbox tests
+  - **On PR:** Full tests including sandbox tests to verify full functionality
 
 **Deploy (`.github/workflows/deploy.yml`)** — Runs after CI passes on `main`:
 
@@ -199,8 +205,8 @@ bun run deploy:app
 
 ```bash
 # For the Pages app
-wrangler pages secret put E2B_API_KEY --project-name vibecode-arena
-wrangler pages secret put OPENROUTER_API_KEY --project-name vibecode-arena
+bun x wrangler pages secret put E2B_API_KEY --project-name vibecode-arena
+bun x wrangler pages secret put OPENROUTER_API_KEY --project-name vibecode-arena
 ```
 
 ## Architecture

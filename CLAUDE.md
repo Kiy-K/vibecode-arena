@@ -73,7 +73,6 @@ bun run dev:worker       # Wrangler only
 # Testing
 bun run test             # Unit/integration tests (Vitest)
 bun run test:watch       # Watch mode
-bun run test:e2e         # Full E2E (all tests, requires E2B API key)
 bun run test:e2e:quick   # E2E without @sandbox tests (no E2B needed)
 bun run test:e2e:sandbox # Only @sandbox tests (shared sandbox)
 bun run test:e2e:ui      # Playwright UI for non-sandbox tests
