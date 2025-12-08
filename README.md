@@ -15,6 +15,8 @@ Competitive multiplayer coding game where players pick an AI model and race to b
 
 I've always enjoyed playing casual multiplayer games like skribbl.io with friends to kill some time. Now that everyone's vibecoding, I thought - why not make a game out of it? Instead of drawing, you prompt. Instead of guessing, you watch code render in real-time. Same energy, new skills.
 
+Why UI components? If the challenge was "implement quicksort", you'd just paste that into the AI and it's done - the algorithm is already explained in words. But with UI, you see a visual reference. You have to describe colors, spacing, animations, interactions - that's where prompting skill actually matters.
+
 ## How it works
 
 1. **Create a room** — Get a 6-character code to share with friends
@@ -255,6 +257,12 @@ Currently, the judge "agents" (CodeAnalyzer, VisualMatcher, InteractionTester) a
 - **Dynamic challenge generation** — LLM creates new UI challenges on the fly
 - **Difficulty scaling** — Generates easier/harder challenges based on player performance
 - **Themed rounds** — "Retro UI", "Glassmorphism", "Brutalist" themed challenge sets
+
+### Bigger Challenges
+
+- **Full apps** — Go beyond components. Build entire landing pages, dashboards, or mini-apps
+- **Multi-file projects** — Challenges that require multiple components working together
+- **Longer time limits** — 5-10 minute rounds for complex builds
 
 ### Test Coverage
 
