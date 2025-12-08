@@ -19,12 +19,20 @@ export default defineConfig({
 			provider: 'v8',
 			reporter: ['text', 'html', 'lcov'],
 			include: ['src/lib/**/*.ts'],
-			exclude: ['src/lib/**/*.d.ts'],
+			exclude: [
+				'src/lib/**/*.d.ts',
+				'src/lib/types/**', // Type definitions only
+				'src/lib/hooks/**', // Svelte runes - need browser/component tests
+				'src/lib/server/**', // Server code - needs integration tests with real services
+				'src/lib/components/**', // UI components - need component tests
+				'src/lib/config/seo.ts', // SEO metadata - tested via E2E
+				'src/lib/utils/confetti.ts' // Browser-only canvas animation
+			],
 			thresholds: {
-				statements: 50,
+				statements: 70,
 				branches: 50,
-				functions: 50,
-				lines: 50
+				functions: 70,
+				lines: 70
 			}
 		}
 	}
