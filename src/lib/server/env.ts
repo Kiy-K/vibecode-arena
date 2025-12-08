@@ -14,11 +14,19 @@ const envSchema = v.object({
 /**
  * Validated environment variables.
  * Throws at startup if any required variable is missing.
+ * In E2E_SKIP_SANDBOX mode, uses dummy values for API keys.
  */
 function validateEnv() {
+	const skipSandbox = dynamicEnv.E2E_SKIP_SANDBOX === 'true';
+
+	// Use dummy values for E2E tests that skip sandbox
+	const e2bKey = dynamicEnv.E2B_API_KEY || (skipSandbox ? 'e2b_dummy_key_for_tests' : undefined);
+	const openrouterKey =
+		dynamicEnv.OPENROUTER_API_KEY || (skipSandbox ? 'sk-or-dummy_key_for_tests' : undefined);
+
 	const result = v.safeParse(envSchema, {
-		E2B_API_KEY: dynamicEnv.E2B_API_KEY,
-		OPENROUTER_API_KEY: dynamicEnv.OPENROUTER_API_KEY
+		E2B_API_KEY: e2bKey,
+		OPENROUTER_API_KEY: openrouterKey
 	});
 
 	if (!result.success) {

@@ -28,3 +28,4 @@ pnpm-lock.yaml
 worker/dist
 test-results/
 playwright-report/
+coverage/
