@@ -124,9 +124,7 @@
 
 				<!-- Chat + Code -->
 				<div
-					class="flex-1 flex overflow-hidden {game.mobileTab !== 'chat'
-						? 'hidden md:flex'
-						: ''}"
+					class="flex-1 flex overflow-hidden {game.mobileTab !== 'chat' ? 'hidden md:flex' : ''}"
 				>
 					<ChatArea
 						messages={game.messages}
@@ -184,11 +182,8 @@
 				/>
 			{/if}
 
-	
 			{#if game.allSubmitted && !game.showCelebration}
-				<div
-					class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
-				>
+				<div class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
 					<div class="text-center max-w-md">
 						<p
 							class="text-2xl font-bold {game.result?.passed
@@ -200,16 +195,12 @@
 
 						{#if game.result}
 							<div class="mb-4 text-lg">
-								<span class="text-orange-400 font-mono font-bold"
-									>{game.result.score}</span
-								>
+								<span class="text-orange-400 font-mono font-bold">{game.result.score}</span>
 								<span class="text-neutral-500">/100 similarity</span>
 							</div>
 
 							{#if game.result.feedback}
-								<div
-									class="mb-6 px-4 py-3 bg-neutral-900 border border-neutral-800 text-left"
-								>
+								<div class="mb-6 px-4 py-3 bg-neutral-900 border border-neutral-800 text-left">
 									<p class="text-sm text-neutral-300 leading-relaxed">
 										{game.result.feedback}
 									</p>
@@ -226,19 +217,15 @@
 			{/if}
 
 			{#if game.waitingForJudging && !game.showCelebration}
-				<div
-					class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
-				>
+				<div class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
 					<div class="text-center max-w-md">
 						<div class="mb-4">
-							<div class="w-12 h-12 mx-auto border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+							<div
+								class="w-12 h-12 mx-auto border-4 border-orange-500 border-t-transparent rounded-full animate-spin"
+							></div>
 						</div>
-						<p class="text-2xl font-bold text-orange-500 mb-2">
-							Time's Up!
-						</p>
-						<p class="text-neutral-400 mb-4">
-							Waiting for AI analysis to complete...
-						</p>
+						<p class="text-2xl font-bold text-orange-500 mb-2">Time's Up!</p>
+						<p class="text-neutral-400 mb-4">Waiting for AI analysis to complete...</p>
 						<p class="text-sm text-neutral-500">
 							{game.judgingCount} player{game.judgingCount !== 1 ? 's' : ''} being analyzed
 						</p>

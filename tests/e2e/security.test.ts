@@ -1,4 +1,4 @@
-import { test, expect, type BrowserContext, type Page } from '@playwright/test';
+import { test, expect, type BrowserContext, type Page, type Browser } from '@playwright/test';
 
 // Increase timeout for tests that involve room creation (sandbox initialization)
 test.setTimeout(120000);
@@ -6,18 +6,23 @@ test.setTimeout(120000);
 /**
  * Security E2E Tests
  *
- * Tests for security vulnerabilities:
- * - XSS prevention
- * - Input sanitization
- * - Authorization checks
- * - CSRF protection
+ * Tests security relevant to our stack:
+ * - XSS prevention (Svelte auto-escapes, but test edge cases)
+ * - Input sanitization (names, room codes)
+ * - Authorization (host-only actions, player isolation)
+ * - Prototype pollution prevention
+ * - Rate limiting
+ * - Session isolation (browser contexts)
+ *
+ * Stack: SvelteKit + Cloudflare Durable Objects + E2B sandboxes
+ * Note: No SQL/NoSQL - we use DO storage (KV-style)
  */
 
 // Helper to create a game context
 async function createGameContext(
-	browser: import('@playwright/test').Browser,
-	playerCount: number = 2
-) {
+	browser: Browser,
+	playerCount = 2
+): Promise<{ pages: Page[]; contexts: BrowserContext[]; cleanup: () => Promise<void> }> {
 	const contexts: BrowserContext[] = [];
 	const pages: Page[] = [];
 
@@ -115,7 +120,7 @@ test.describe('XSS Prevention', () => {
 			await expect(hostPage.locator('text=players (1)')).toBeVisible({ timeout: 15000 });
 
 			// No elements should have inline onmouseover handlers from user input
-			const maliciousElements = await hostPage.locator('[onmouseover]').count();
+			const _maliciousElements = await hostPage.locator('[onmouseover]').count();
 			// There might be legitimate onmouseover handlers, but they shouldn't contain "alert"
 		} finally {
 			await cleanup();
@@ -226,44 +231,52 @@ test.describe('Input Sanitization', () => {
 		// or might be converted to uppercase depending on implementation
 	});
 
-	test('SQL injection in name is handled safely', async ({ browser }) => {
+	test('special characters in name are stored safely', async ({ browser }) => {
+		// Test that Durable Object storage handles special chars correctly
 		const {
-			pages: [hostPage],
+			pages: [hostPage, joinerPage],
 			cleanup
-		} = await createGameContext(browser, 1);
+		} = await createGameContext(browser, 2);
 
 		try {
+			const specialName = '🎮 Player<>"\'/\\';
 			await hostPage.goto('/create');
-			await hostPage.fill('input#nameInput', "'; DROP TABLE users; --");
+			await hostPage.fill('input#nameInput', specialName);
 			await hostPage.waitForTimeout(100);
 			await hostPage.click('button[type="submit"]');
 
-			// Should create room normally (SQL injection shouldn't affect anything)
 			await hostPage.waitForURL(/\/[A-Z0-9]{6}$/, { timeout: 30000 });
 			await expect(hostPage.locator('text=players (1)')).toBeVisible({ timeout: 15000 });
+
+			const roomCode = hostPage.url().split('/').pop()!;
+
+			// Joiner should see the name displayed safely (escaped)
+			await joinerPage.goto('/join');
+			await joinerPage.fill('input#code', roomCode);
+			await joinerPage.fill('input#nameInput', 'Viewer');
+			await joinerPage.waitForTimeout(100);
+			await joinerPage.click('button[type="submit"]');
+			await joinerPage.waitForURL(`/${roomCode}`, { timeout: 30000 });
+			await expect(joinerPage.locator('text=players (2)')).toBeVisible({ timeout: 15000 });
+
+			// Name should be visible (possibly truncated/escaped) without breaking the page
 		} finally {
 			await cleanup();
 		}
 	});
 
-	test('NoSQL injection in name is handled safely', async ({ browser }) => {
-		const {
-			pages: [hostPage],
-			cleanup
-		} = await createGameContext(browser, 1);
+	test('room code with invalid characters is rejected', async ({ page }) => {
+		await page.goto('/join');
+		await page.fill('input#code', 'ABC!@#');
+		await page.fill('input#nameInput', 'Player');
+		await page.waitForTimeout(100);
+		await page.click('button[type="submit"]');
 
-		try {
-			await hostPage.goto('/create');
-			await hostPage.fill('input#nameInput', '{"$gt": ""}');
-			await hostPage.waitForTimeout(100);
-			await hostPage.click('button[type="submit"]');
-
-			// Should create room normally
-			await hostPage.waitForURL(/\/[A-Z0-9]{6}$/, { timeout: 30000 });
-			await expect(hostPage.locator('text=players (1)')).toBeVisible({ timeout: 15000 });
-		} finally {
-			await cleanup();
-		}
+		// Should show error or not navigate (invalid room code format)
+		await page.waitForTimeout(2000);
+		// Either stays on /join or shows Room not found
+		const url = page.url();
+		expect(url.includes('/join') || url.includes('error')).toBe(true);
 	});
 });
 
@@ -288,7 +301,7 @@ test.describe('Rate Limiting', () => {
 
 			// Wait for all to complete
 			await Promise.all(
-				pages.map(async (page, i) => {
+				pages.map(async (page) => {
 					try {
 						await page.waitForURL(/\/[A-Z0-9]{6}$/, { timeout: 30000 });
 					} catch {
@@ -343,14 +356,14 @@ test.describe('Session Security', () => {
 });
 
 test.describe('Content Security', () => {
-	test('external resources are not loaded from user input', async ({ browser }) => {
+	test('XSS in player name via fill is escaped', async ({ browser }) => {
 		const {
-			pages: [hostPage],
+			pages: [hostPage, joinerPage],
 			cleanup
-		} = await createGameContext(browser, 1);
+		} = await createGameContext(browser, 2);
 
 		try {
-			// Track network requests
+			// Track network requests for exfiltration attempts
 			const externalRequests: string[] = [];
 			hostPage.on('request', (request) => {
 				const url = request.url();
@@ -360,22 +373,139 @@ test.describe('Content Security', () => {
 			});
 
 			await hostPage.goto('/create');
-			// Try to inject an external image
-			await hostPage.evaluate(() => {
-				const input = document.querySelector('input#nameInput') as HTMLInputElement;
-				input.value = '<img src="http://evil.com/tracker.gif">';
-			});
+			// Use Playwright fill which properly triggers Svelte reactivity
+			await hostPage.fill('input#nameInput', '<img src="http://evil.com/x.gif">');
 			await hostPage.waitForTimeout(100);
 			await hostPage.click('button[type="submit"]');
 			await hostPage.waitForURL(/\/[A-Z0-9]{6}$/, { timeout: 30000 });
 			await expect(hostPage.locator('text=players (1)')).toBeVisible({ timeout: 15000 });
 
-			// Wait a bit for any potential requests
+			const roomCode = hostPage.url().split('/').pop()!;
+
+			// Have another player join to see the malicious name
+			await joinerPage.goto('/join');
+			await joinerPage.fill('input#code', roomCode);
+			await joinerPage.fill('input#nameInput', 'Victim');
+			await joinerPage.waitForTimeout(100);
+			await joinerPage.click('button[type="submit"]');
+			await joinerPage.waitForURL(`/${roomCode}`, { timeout: 30000 });
+			await expect(joinerPage.locator('text=players (2)')).toBeVisible({ timeout: 15000 });
+
+			// Wait for any potential image requests
 			await hostPage.waitForTimeout(2000);
 
-			// Should not have made request to evil.com
+			// External image should NOT have been loaded (XSS prevented)
 			const evilRequests = externalRequests.filter((url) => url.includes('evil.com'));
 			expect(evilRequests).toHaveLength(0);
+
+			// No img tags with external src should exist
+			const maliciousImgs = await joinerPage.locator('img[src*="evil"]').count();
+			expect(maliciousImgs).toBe(0);
+		} finally {
+			await cleanup();
+		}
+	});
+
+	test('script tag in player name does not execute', async ({ browser }) => {
+		const {
+			pages: [hostPage, joinerPage],
+			cleanup
+		} = await createGameContext(browser, 2);
+
+		try {
+			await hostPage.goto('/create');
+			await hostPage.fill('input#nameInput', '<script>window.xssExecuted=true</script>');
+			await hostPage.waitForTimeout(100);
+			await hostPage.click('button[type="submit"]');
+			await hostPage.waitForURL(/\/[A-Z0-9]{6}$/, { timeout: 30000 });
+
+			const roomCode = hostPage.url().split('/').pop()!;
+
+			// Have another player join to see the malicious name
+			await joinerPage.goto('/join');
+			await joinerPage.fill('input#code', roomCode);
+			await joinerPage.fill('input#nameInput', 'Victim');
+			await joinerPage.waitForTimeout(100);
+			await joinerPage.click('button[type="submit"]');
+			await joinerPage.waitForURL(`/${roomCode}`, { timeout: 30000 });
+			await expect(joinerPage.locator('text=players (2)')).toBeVisible({ timeout: 15000 });
+
+			// Check XSS didn't execute on either page
+			const xssOnHost = await hostPage.evaluate(() => (window as any).xssExecuted);
+			const xssOnJoiner = await joinerPage.evaluate(() => (window as any).xssExecuted);
+			expect(xssOnHost).toBeFalsy();
+			expect(xssOnJoiner).toBeFalsy();
+		} finally {
+			await cleanup();
+		}
+	});
+
+	test('HTML injection in player name is escaped', async ({ browser }) => {
+		const {
+			pages: [hostPage],
+			cleanup
+		} = await createGameContext(browser, 1);
+
+		try {
+			await hostPage.goto('/create');
+			await hostPage.fill('input#nameInput', '"><img src=x onerror=alert(1)><"');
+			await hostPage.waitForTimeout(100);
+			await hostPage.click('button[type="submit"]');
+			await hostPage.waitForURL(/\/[A-Z0-9]{6}$/, { timeout: 30000 });
+			await expect(hostPage.locator('text=players (1)')).toBeVisible({ timeout: 15000 });
+
+			// The malicious HTML should NOT be interpreted
+			const maliciousImgs = await hostPage.locator('img[onerror]').count();
+			expect(maliciousImgs).toBe(0);
+
+			// No alert should have fired (test implicitly passes if we get here without dialog)
+		} finally {
+			await cleanup();
+		}
+	});
+
+	test('form action tampering does not bypass security', async ({ browser }) => {
+		const {
+			pages: [hostPage],
+			cleanup
+		} = await createGameContext(browser, 1);
+
+		try {
+			await hostPage.goto('/create');
+
+			// Real attacker: try to modify form action or add extra hidden fields
+			await hostPage.evaluate(() => {
+				const form = document.querySelector('form') as HTMLFormElement;
+				if (form) {
+					// Try to inject additional form data
+					const maliciousInput = document.createElement('input');
+					maliciousInput.type = 'hidden';
+					maliciousInput.name = '__proto__[isAdmin]';
+					maliciousInput.value = 'true';
+					form.appendChild(maliciousInput);
+
+					// Also inject prototype pollution attempt
+					const protoInput = document.createElement('input');
+					protoInput.type = 'hidden';
+					protoInput.name = 'constructor[prototype][polluted]';
+					protoInput.value = 'yes';
+					form.appendChild(protoInput);
+				}
+			});
+
+			await hostPage.fill('input#nameInput', 'NormalPlayer');
+			await hostPage.waitForTimeout(100);
+			await hostPage.click('button[type="submit"]');
+
+			// Should create room normally without server errors
+			await hostPage.waitForURL(/\/[A-Z0-9]{6}$/, { timeout: 30000 });
+			await expect(hostPage.locator('text=players (1)')).toBeVisible({ timeout: 15000 });
+
+			// Verify prototype wasn't polluted
+			const polluted = await hostPage.evaluate(() => {
+				return ({} as any).polluted !== undefined || ({} as any).isAdmin !== undefined;
+			});
+			expect(polluted).toBe(false);
 		} finally {
 			await cleanup();
 		}

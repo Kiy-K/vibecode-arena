@@ -19,8 +19,8 @@ export const siteConfig = {
 	backgroundColor: '#0a0a0a',
 
 	// Social
-	twitter: '@vibecodearena_dev', 
-	github: 'https://github.com/bxxf/vibecode-arena', 
+	twitter: '@vibecodearena_dev',
+	github: 'https://github.com/bxxf/vibecode-arena',
 
 	// App info
 	author: 'Filip Brebera',

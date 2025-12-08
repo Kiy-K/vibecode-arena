@@ -55,7 +55,9 @@ export function useTimer() {
 
 	return {
 		/** Remaining time in seconds */
-		get timeLeft() { return timeLeft; },
+		get timeLeft() {
+			return timeLeft;
+		},
 		start,
 		stop
 	};

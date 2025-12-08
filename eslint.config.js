@@ -81,16 +81,30 @@ export default [
 		}
 	},
 	{
+		// Tests and sandbox build scripts can use console.log
+		files: ['tests/**/*.ts', 'sandbox/**/*.ts', 'sandbox/**/*.js'],
+		rules: {
+			'no-console': 'off',
+			'@typescript-eslint/no-explicit-any': 'off'
+		}
+	},
+	{
 		ignores: [
 			'.svelte-kit/**',
+			'.wrangler/**',
 			'build/**',
 			'node_modules/**',
 			'template/**',
 			'patches/**',
+			'playwright-report/**',
+			'worker/dist/**',
+			'sandbox/files/**',
 			'*.config.js',
 			'*.config.ts',
 			// Svelte 5 runes files need svelte parser, not regular TS
-			'**/*.svelte.ts'
+			'**/*.svelte.ts',
+			// ESLint's Svelte parser can't handle @html with JSON speculations rules script
+			'src/routes/+page.svelte'
 		]
 	}
 ];

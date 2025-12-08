@@ -95,6 +95,7 @@ export interface Room {
 /** Room data safe to send to clients */
 export interface PublicRoom {
 	code: string;
+	hostId: string;
 	status: RoomStatus;
 	round: number;
 	maxRounds: number;
@@ -107,13 +108,13 @@ export interface PublicRoom {
 /** Game event for logging/debugging */
 export interface GameEvent {
 	type:
-	| 'player_joined'
-	| 'player_left'
-	| 'game_started'
-	| 'challenge_started'
-	| 'player_submitted'
-	| 'round_ended'
-	| 'game_ended';
+		| 'player_joined'
+		| 'player_left'
+		| 'game_started'
+		| 'challenge_started'
+		| 'player_submitted'
+		| 'round_ended'
+		| 'game_ended';
 	data: unknown;
 	timestamp: number;
 }

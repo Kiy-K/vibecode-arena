@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { Tabs } from "bits-ui";
+	import { Tabs } from 'bits-ui';
 
-	type MobileTab = "challenge" | "chat" | "code";
+	type MobileTab = 'challenge' | 'chat' | 'code';
 
 	interface Props {
 		activeTab: MobileTab;
@@ -37,7 +37,10 @@
 		>
 			Code
 			{#if hasCode && !submitted}
-				<span class="absolute top-1 right-1/4 w-2 h-2 bg-orange-500 rounded-full" aria-label="New code available"></span>
+				<span
+					class="absolute top-1 right-1/4 w-2 h-2 bg-orange-500 rounded-full"
+					aria-label="New code available"
+				></span>
 			{/if}
 		</Tabs.Trigger>
 	</Tabs.List>

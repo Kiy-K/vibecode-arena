@@ -14,12 +14,13 @@ describe('Form Validation Schemas', () => {
 			expect(result.success).toBe(true);
 		});
 
-		it('rejects empty name', () => {
+		it('accepts empty name (server assigns default)', () => {
+			// Empty names are allowed at schema level - server assigns a default name
 			const result = v.safeParse(createRoomSchema, {
 				name: '',
 				model: ENABLED_MODEL_IDS[0]
 			});
-			expect(result.success).toBe(false);
+			expect(result.success).toBe(true);
 		});
 
 		it('rejects name over 20 characters', () => {

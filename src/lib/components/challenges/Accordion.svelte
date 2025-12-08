@@ -7,18 +7,16 @@
 @timeLimit: 60
 -->
 <script lang="ts">
-  let { items = [] } = $props();
-  let openIndex: number | null = $state(null);
+	let { items = [] } = $props();
+	let openIndex: number | null = $state(null);
 </script>
 
-<div
-  style="width: 320px; border: 1px solid #374151; border-radius: 8px; overflow: hidden;"
->
-  {#each items as item, i (item.title)}
-    <div>
-      <button
-        onclick={() => (openIndex = openIndex === i ? null : i)}
-        style="
+<div style="width: 320px; border: 1px solid #374151; border-radius: 8px; overflow: hidden;">
+	{#each items as item, i (item.title)}
+		<div>
+			<button
+				onclick={() => (openIndex = openIndex === i ? null : i)}
+				style="
           width: 100%;
           padding: 12px 16px;
           background: #1f2937;
@@ -31,24 +29,22 @@
           align-items: center;
           font-weight: 500;
         "
-      >
-        <span>{item.title}</span>
-        <span
-          style="transform: rotate({openIndex === i
-            ? 180
-            : 0}deg); transition: transform 0.2s;">▼</span
-        >
-      </button>
-      <div
-        style="
+			>
+				<span>{item.title}</span>
+				<span style="transform: rotate({openIndex === i ? 180 : 0}deg); transition: transform 0.2s;"
+					>▼</span
+				>
+			</button>
+			<div
+				style="
           max-height: {openIndex === i ? '200px' : '0'};
           overflow: hidden;
           transition: max-height 0.3s;
           background: #111827;
         "
-      >
-        <div style="padding: 16px; color: #9ca3af;">{item.content}</div>
-      </div>
-    </div>
-  {/each}
+			>
+				<div style="padding: 16px; color: #9ca3af;">{item.content}</div>
+			</div>
+		</div>
+	{/each}
 </div>

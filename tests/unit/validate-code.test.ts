@@ -105,7 +105,7 @@ describe('validatePlayerCode', () => {
 			const code = `new WebSocket('ws://example.com')`;
 			const result = validatePlayerCode(code, playerId);
 			expect(result.valid).toBe(true);
-			expect(result.warnings.some(w => w.includes('WebSocket'))).toBe(true);
+			expect(result.warnings.some((w) => w.includes('WebSocket'))).toBe(true);
 		});
 	});
 });

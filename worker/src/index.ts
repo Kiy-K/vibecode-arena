@@ -22,12 +22,12 @@ function corsHeaders(origin: string | null, env: Env): HeadersInit {
 		'Access-Control-Allow-Origin': allowedOrigin,
 		'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 		'Access-Control-Allow-Headers': 'Content-Type',
-		'Access-Control-Max-Age': '86400',
+		'Access-Control-Max-Age': '86400'
 	};
 }
 
 export default {
-	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+	async fetch(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
 		const url = new URL(request.url);
 		const origin = request.headers.get('Origin');
 
@@ -82,9 +82,9 @@ export default {
 						code: roomCode,
 						hostName: body.hostName,
 						hostModel: body.hostModel,
-						challenges: body.challenges,
-					},
-				}),
+						challenges: body.challenges
+					}
+				})
 			});
 
 			const response = await room.fetch(doRequest);
@@ -107,8 +107,8 @@ export default {
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					method: 'joinRoom',
-					params: { playerName: body.playerName, model: body.model },
-				}),
+					params: { playerName: body.playerName, model: body.model }
+				})
 			});
 
 			const response = await room.fetch(doRequest);
@@ -119,7 +119,7 @@ export default {
 					{ error: 'Room not found or not joinable' },
 					{
 						status: 404,
-						headers: corsHeaders(origin, env),
+						headers: corsHeaders(origin, env)
 					}
 				);
 			}
@@ -128,6 +128,5 @@ export default {
 		}
 
 		return new Response('Not Found', { status: 404, headers: corsHeaders(origin, env) });
-	},
+	}
 } satisfies ExportedHandler<Env>;
-

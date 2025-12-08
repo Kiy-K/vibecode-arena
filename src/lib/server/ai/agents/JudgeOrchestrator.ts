@@ -200,7 +200,8 @@ export async function judgeSubmission(context: JudgingContext): Promise<JudgingR
 		}
 	}
 
-	const finalScore = totalWeight > 0 ? Math.round(weightedSum / totalWeight) : CONFIG.FALLBACK_SCORE;
+	const finalScore =
+		totalWeight > 0 ? Math.round(weightedSum / totalWeight) : CONFIG.FALLBACK_SCORE;
 	const feedback = feedbackParts.join(' ') || 'Analysis complete.';
 
 	const duration = Date.now() - startTime;
@@ -216,7 +217,8 @@ export async function judgeSubmission(context: JudgingContext): Promise<JudgingR
 		breakdown: {
 			codeAnalysis: resultMap.get('CodeAnalyzer') || createEmptyAnalysis('CodeAnalyzer'),
 			visualMatching: resultMap.get('VisualMatcher') || createEmptyAnalysis('VisualMatcher'),
-			interactionTesting: resultMap.get('InteractionTester') || createEmptyAnalysis('InteractionTester')
+			interactionTesting:
+				resultMap.get('InteractionTester') || createEmptyAnalysis('InteractionTester')
 		},
 		aggregationMethod: 'weighted_average'
 	};

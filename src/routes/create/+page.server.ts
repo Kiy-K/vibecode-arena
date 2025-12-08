@@ -8,6 +8,7 @@ import { room, sandbox } from '$lib/server/do-client';
 import { startRoomSandbox } from '$lib/server/e2b';
 import { createLogger } from '$lib/server/logger';
 import { createRoomSchema } from '$lib/validation/schemas';
+import { generateRandomName } from '$lib/utils/nameGenerator';
 
 const log = createLogger('CreateRoom');
 
@@ -21,9 +22,24 @@ export const actions: Actions = {
 			return fail(400, { error: 'Invalid input', issues: result.issues });
 		}
 
+		// Sanitize name: replace spaces with underscores, trim, lowercase
+		const sanitizedName = result.output.name
+			.replace(/\s+/g, '_')
+			.replace(/^_+|_+$/g, '')
+			.toLowerCase();
+		// Use placeholder from form (what user saw) if name is empty, fallback to random
+		const placeholder = String(data.placeholder || '')
+			.replace(/\s+/g, '_')
+			.replace(/^_+|_+$/g, '')
+			.toLowerCase();
+		const playerName =
+			sanitizedName.replace(/_/g, '').length > 0
+				? sanitizedName
+				: placeholder || generateRandomName().toLowerCase();
+
 		// Create room via DO
 		const { room: newRoom, playerId } = await room.create(
-			result.output.name,
+			playerName,
 			result.output.model as ModelId
 		);
 
@@ -44,20 +60,27 @@ export const actions: Actions = {
 			maxAge: 60 * 60 * 2
 		});
 
-		// Start sandbox in background using waitUntil to keep worker alive
-		const sandboxPromise = startRoomSandbox(newRoom.id, newRoom.code)
-			.then(async () => {
-				// Notify DO that sandbox is ready for ALL players in the room
-				await sandbox.setRoomReady(newRoom.code).catch(() => {});
-			})
-			.catch((err) => {
-				log.error('Failed to start room sandbox', { roomId: newRoom.id, error: String(err) });
-			});
+		// Skip sandbox creation if E2E_SKIP_SANDBOX is set (for fast lobby-only tests)
+		const skipSandbox = process.env.E2E_SKIP_SANDBOX === 'true';
 
-		// Use waitUntil to keep the worker alive for background work
-		const ctx = platform as { context?: { waitUntil?: (p: Promise<unknown>) => void } } | undefined;
-		if (ctx?.context?.waitUntil) {
-			ctx.context.waitUntil(sandboxPromise);
+		if (!skipSandbox) {
+			// Start sandbox in background using waitUntil to keep worker alive
+			const sandboxPromise = startRoomSandbox(newRoom.id, newRoom.code)
+				.then(async () => {
+					// Notify DO that sandbox is ready for ALL players in the room
+					await sandbox.setRoomReady(newRoom.code).catch(() => {});
+				})
+				.catch((err) => {
+					log.error('Failed to start room sandbox', { roomId: newRoom.id, error: String(err) });
+				});
+
+			// Use waitUntil to keep the worker alive for background work
+			const ctx = platform as
+				| { context?: { waitUntil?: (p: Promise<unknown>) => void } }
+				| undefined;
+			if (ctx?.context?.waitUntil) {
+				ctx.context.waitUntil(sandboxPromise);
+			}
 		}
 
 		redirect(303, `/${newRoom.code}`);

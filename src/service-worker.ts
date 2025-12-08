@@ -13,7 +13,7 @@ const CACHE = `cache-${version}`;
 // Assets to cache immediately on install
 const ASSETS = [
 	...build, // the app itself (JS/CSS)
-	...files  // static files
+	...files // static files
 ];
 
 // Install: cache all static assets

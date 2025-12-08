@@ -30,6 +30,7 @@ function sanitizePlayer(p: Player): PublicPlayer {
 function sanitizeRoom(r: Room): PublicRoom {
 	return {
 		code: r.code,
+		hostId: r.hostId,
 		status: r.status,
 		round: r.round,
 		maxRounds: r.maxRounds,

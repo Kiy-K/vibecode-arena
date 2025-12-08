@@ -14,14 +14,17 @@ interface RateLimitEntry {
 const limits = new Map<string, RateLimitEntry>();
 
 // Clean up expired entries every 5 minutes
-setInterval(() => {
-	const now = Date.now();
-	for (const [key, entry] of limits) {
-		if (entry.resetTime < now) {
-			limits.delete(key);
+setInterval(
+	() => {
+		const now = Date.now();
+		for (const [key, entry] of limits) {
+			if (entry.resetTime < now) {
+				limits.delete(key);
+			}
 		}
-	}
-}, 5 * 60 * 1000);
+	},
+	5 * 60 * 1000
+);
 
 /** Rate limit configuration */
 export interface RateLimitConfig {
@@ -58,7 +61,11 @@ export function checkRateLimit(
 	}
 
 	entry.count++;
-	return { allowed: true, remaining: config.maxRequests - entry.count, resetIn: entry.resetTime - now };
+	return {
+		allowed: true,
+		remaining: config.maxRequests - entry.count,
+		resetIn: entry.resetTime - now
+	};
 }
 
 // =============================================================================

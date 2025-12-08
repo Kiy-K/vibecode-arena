@@ -19,17 +19,7 @@ const ADJECTIVES = [
 ];
 
 /** Nouns for name generation */
-const NOUNS = [
-	'coder',
-	'hacker',
-	'wizard',
-	'dev',
-	'byte',
-	'bit',
-	'node',
-	'stack',
-	'loop'
-];
+const NOUNS = ['coder', 'hacker', 'wizard', 'dev', 'byte', 'bit', 'node', 'stack', 'loop'];
 
 /**
  * Generate a random player name.

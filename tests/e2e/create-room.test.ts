@@ -29,7 +29,9 @@ test.describe('Create Room Page', () => {
 		await page.waitForTimeout(500);
 		// Dispatch keydown event directly to window for reliability
 		await page.evaluate(() => {
-			window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+			window.dispatchEvent(
+				new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })
+			);
 		});
 		await expect(page).toHaveURL('/');
 	});

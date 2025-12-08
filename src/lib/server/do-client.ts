@@ -26,7 +26,13 @@ function getWorkerUrl(): string {
 function getPublicWorkerUrl(): string {
 	if (dev) return 'http://localhost:8788';
 	// Try process.env first (works better with bun), fallback to SvelteKit env
-	return process.env.PUBLIC_WORKER_URL || env.PUBLIC_WORKER_URL || process.env.WORKER_URL || env.WORKER_URL || 'https://api.vibecodearena.dev';
+	return (
+		process.env.PUBLIC_WORKER_URL ||
+		env.PUBLIC_WORKER_URL ||
+		process.env.WORKER_URL ||
+		env.WORKER_URL ||
+		'https://api.vibecodearena.dev'
+	);
 }
 
 // ============================================================================
@@ -52,11 +58,15 @@ interface SubmitSolutionResult {
 // Internal Helpers
 // ============================================================================
 
-async function rpc<T>(roomCode: string, method: string, params?: Record<string, unknown>): Promise<T> {
+async function rpc<T>(
+	roomCode: string,
+	method: string,
+	params?: Record<string, unknown>
+): Promise<T> {
 	const res = await fetch(`${getWorkerUrl()}/room/${roomCode}`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ method, params }),
+		body: JSON.stringify({ method, params })
 	});
 
 	if (!res.ok) {
@@ -71,7 +81,7 @@ async function post<T>(path: string, body: Record<string, unknown>): Promise<T> 
 	const res = await fetch(`${getWorkerUrl()}${path}`, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify(body),
+		body: JSON.stringify(body)
 	});
 	return res.json() as Promise<T>;
 }
@@ -84,7 +94,7 @@ export const room = {
 	/** Get room state (public, sanitized) */
 	async get(roomCode: string): Promise<Room | null> {
 		const res = await fetch(`${getWorkerUrl()}/room/${roomCode}`);
-		const data = await res.json() as { room: Room | null };
+		const data = (await res.json()) as { room: Room | null };
 		return data.room;
 	},
 
@@ -100,11 +110,15 @@ export const room = {
 	},
 
 	/** Join an existing room */
-	async join(roomCode: string, playerName: string, model: ModelId): Promise<{ room: Room; playerId: string } | { error: string } | null> {
+	async join(
+		roomCode: string,
+		playerName: string,
+		model: ModelId
+	): Promise<{ room: Room; playerId: string } | { error: string } | null> {
 		const res = await fetch(`${getWorkerUrl()}/join/${roomCode}`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ playerName, model }),
+			body: JSON.stringify({ playerName, model })
 		});
 		if (!res.ok) return null;
 		return res.json() as Promise<{ room: Room; playerId: string } | { error: string }>;
@@ -113,7 +127,7 @@ export const room = {
 	/** Remove a player from room */
 	async removePlayer(roomCode: string, playerId: string): Promise<Room | null> {
 		return rpc<Room | null>(roomCode, 'removePlayer', { playerId });
-	},
+	}
 };
 
 // ============================================================================
@@ -132,14 +146,17 @@ export const game = {
 	},
 
 	/** Submit a solution */
-	async submitSolution(roomCode: string, params: SubmitSolutionParams): Promise<SubmitSolutionResult | null> {
+	async submitSolution(
+		roomCode: string,
+		params: SubmitSolutionParams
+	): Promise<SubmitSolutionResult | null> {
 		return rpc(roomCode, 'submitSolution', params as unknown as Record<string, unknown>);
 	},
 
 	/** Mark player as ready during review */
 	async markReady(roomCode: string, playerId: string): Promise<boolean> {
 		return rpc<boolean>(roomCode, 'markPlayerReady', { playerId });
-	},
+	}
 };
 
 // ============================================================================
@@ -153,14 +170,17 @@ export const scoring = {
 	},
 
 	/** Use a hint */
-	async useHint(roomCode: string, playerId: string): Promise<{ success: boolean; hintsRemaining: number }> {
+	async useHint(
+		roomCode: string,
+		playerId: string
+	): Promise<{ success: boolean; hintsRemaining: number }> {
 		return rpc(roomCode, 'useHint', { playerId });
 	},
 
 	/** Get remaining hints */
 	async getHintsRemaining(roomCode: string, playerId: string): Promise<number> {
 		return rpc<number>(roomCode, 'getHintsRemaining', { playerId });
-	},
+	}
 };
 
 // ============================================================================
@@ -181,7 +201,7 @@ export const judging = {
 	/** Track infrastructure wait time */
 	async trackWaitTime(roomCode: string, playerId: string, ms: number): Promise<void> {
 		await rpc(roomCode, 'trackWaitTime', { playerId, ms });
-	},
+	}
 };
 
 // ============================================================================
@@ -207,7 +227,7 @@ export const sandbox = {
 	/** Emit a sandbox log message */
 	async emitLog(roomCode: string, message: string): Promise<void> {
 		await rpc(roomCode, 'emitSandboxLog', { message });
-	},
+	}
 };
 
 // ============================================================================
@@ -219,4 +239,3 @@ export function getWebSocketUrl(roomCode: string, playerId: string): string {
 	const wsUrl = getPublicWorkerUrl().replace('http', 'ws');
 	return `${wsUrl}/room/${roomCode}?playerId=${playerId}`;
 }
-

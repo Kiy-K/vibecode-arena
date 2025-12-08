@@ -8,12 +8,13 @@
 @timeLimit: 60
 -->
 <script>
-  let { count = 0, icon = '🔔' } = $props();
-  let displayCount = $derived(count > 99 ? '99+' : count);
+	let { count = 0, icon = '🔔' } = $props();
+	let displayCount = $derived(count > 99 ? '99+' : count);
 </script>
 
 <div style="position: relative; display: inline-block;">
-  <div style="
+	<div
+		style="
     width: 48px;
     height: 48px;
     background: #3b82f6;
@@ -22,10 +23,14 @@
     align-items: center;
     justify-content: center;
     font-size: 24px;
-  ">{icon}</div>
+  "
+	>
+		{icon}
+	</div>
 
-  {#if count > 0}
-    <div style="
+	{#if count > 0}
+		<div
+			style="
       position: absolute;
       top: -8px;
       right: -8px;
@@ -40,6 +45,9 @@
       font-weight: 700;
       padding: 0 6px;
       border: 2px solid #111;
-    ">{displayCount}</div>
-  {/if}
+    "
+		>
+			{displayCount}
+		</div>
+	{/if}
 </div>

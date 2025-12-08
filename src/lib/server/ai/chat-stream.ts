@@ -11,7 +11,7 @@ import { scoring } from '../do-client';
 import { SandboxManager } from '../e2b';
 import { saveChatMessage } from '../chat-store';
 import { addPlayerWaitTime } from '../ratelimit';
-import { extractCodeBlock, isCodeBlockComplete } from '$lib/utils/code';
+import { extractCodeBlock } from '$lib/utils/code';
 import { createLogger } from '../logger';
 
 const log = createLogger('ChatStream');
@@ -52,7 +52,13 @@ function processHintResult(result: unknown, roomCode: string, playerId: string):
 function createToolHandler(
 	ctx: ChatContext,
 	toolCallResults: ToolCallResult[]
-): ({ toolCalls, toolResults }: { toolCalls?: unknown[]; toolResults?: unknown[] }) => Promise<void> {
+): ({
+	toolCalls,
+	toolResults
+}: {
+	toolCalls?: unknown[];
+	toolResults?: unknown[];
+}) => Promise<void> {
 	return async ({ toolCalls, toolResults }) => {
 		if (!toolCalls?.length) return;
 
@@ -118,7 +124,7 @@ function getErrorMessage(err: unknown): string {
 
 	// Rate limit error (429)
 	if (error.statusCode === 429 || retryError.reason === 'maxRetriesExceeded') {
-		return "The AI model is temporarily rate-limited. Please wait a few seconds and try again.";
+		return 'The AI model is temporarily rate-limited. Please wait a few seconds and try again.';
 	}
 
 	// Try to parse OpenRouter error body
@@ -126,13 +132,13 @@ function getErrorMessage(err: unknown): string {
 		try {
 			const body = JSON.parse(error.responseBody);
 			if (body.error?.code === 429) {
-				return "The AI model is temporarily rate-limited. Please wait a few seconds and try again.";
+				return 'The AI model is temporarily rate-limited. Please wait a few seconds and try again.';
 			}
 			if (body.error?.message) {
 				// Clean up the message for user
 				const msg = body.error.message;
 				if (msg.includes('rate-limited')) {
-					return "The AI model is temporarily rate-limited. Please wait a few seconds and try again.";
+					return 'The AI model is temporarily rate-limited. Please wait a few seconds and try again.';
 				}
 				return `AI error: ${msg}`;
 			}
@@ -144,10 +150,10 @@ function getErrorMessage(err: unknown): string {
 	// Check message for rate limit mentions
 	const message = String(error.message || err);
 	if (message.toLowerCase().includes('rate') || message.includes('429')) {
-		return "Rate limit reached. Please wait a few seconds and try again.";
+		return 'Rate limit reached. Please wait a few seconds and try again.';
 	}
 
-	return "Something went wrong with the AI. Please try again.";
+	return 'Something went wrong with the AI. Please try again.';
 }
 
 /**
@@ -215,11 +221,11 @@ export function streamChatResponse(ctx: ChatContext): Response {
 
 	const tools = useHintTool
 		? getToolsForAI({
-			playerId: ctx.playerId,
-			challengeId: ctx.challenge?.id || 'unknown',
-			referenceCode: ctx.challenge?.referenceCode || '',
-			playerScore: ctx.playerScore
-		})
+				playerId: ctx.playerId,
+				challengeId: ctx.challenge?.id || 'unknown',
+				referenceCode: ctx.challenge?.referenceCode || '',
+				playerScore: ctx.playerScore
+			})
 		: undefined;
 
 	const result = streamText({
@@ -233,7 +239,13 @@ export function streamChatResponse(ctx: ChatContext): Response {
 		onStepFinish: createToolHandler(ctx, toolCallResults)
 	});
 
-	const stream = createResponseStream(result.textStream, ctx, toolCallResults, messageId, startTime);
+	const stream = createResponseStream(
+		result.textStream,
+		ctx,
+		toolCallResults,
+		messageId,
+		startTime
+	);
 
 	return new Response(stream, {
 		headers: {

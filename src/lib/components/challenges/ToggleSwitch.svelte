@@ -7,24 +7,24 @@
 @timeLimit: 60
 -->
 <script>
-  let { isOn = false, onToggle } = $props();
-  let on = $state(false);
+	let { isOn = false, onToggle } = $props();
+	let on = $state(false);
 
-  // Sync from prop when it changes (for animations)
-  $effect(() => {
-    on = isOn;
-  });
+	// Sync from prop when it changes (for animations)
+	$effect(() => {
+		on = isOn;
+	});
 
-  function toggle() {
-    on = !on;
-    onToggle?.(on);
-  }
+	function toggle() {
+		on = !on;
+		onToggle?.(on);
+	}
 </script>
 
 <button
-  onclick={toggle}
-  aria-label="Toggle switch"
-  style="
+	onclick={toggle}
+	aria-label="Toggle switch"
+	style="
     width: 56px;
     height: 32px;
     border-radius: 16px;
@@ -35,8 +35,8 @@
     transition: background 0.2s;
   "
 >
-  <div
-    style="
+	<div
+		style="
       width: 28px;
       height: 28px;
       border-radius: 50%;
@@ -45,5 +45,5 @@
       transition: transform 0.2s;
       box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     "
-  ></div>
+	></div>
 </button>

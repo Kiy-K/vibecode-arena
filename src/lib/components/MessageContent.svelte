@@ -13,9 +13,7 @@
 	 */
 	function sanitizeText(text: string): string {
 		// Strip all HTML tags (we don't allow any HTML in chat messages)
-		const clean = text
-			.replace(/</g, '&lt;')
-			.replace(/>/g, '&gt;');
+		const clean = text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 		// Then convert newlines to <br> tags
 		return clean.replace(/\n/g, '<br>');
 	}
@@ -41,7 +39,11 @@
 	{#each parts as part, i (i)}
 		{#if part.type === 'code'}
 			<div class="my-3 bg-[#0a0a0a] border border-neutral-800 overflow-hidden">
-				<div class="px-3 py-1.5 text-[10px] text-neutral-500 bg-neutral-900/50 border-b border-neutral-800 uppercase tracking-wider">svelte</div>
+				<div
+					class="px-3 py-1.5 text-[10px] text-neutral-500 bg-neutral-900/50 border-b border-neutral-800 uppercase tracking-wider"
+				>
+					svelte
+				</div>
 				<div class="code-block">
 					<Highlight language={xml} code={part.content} />
 				</div>

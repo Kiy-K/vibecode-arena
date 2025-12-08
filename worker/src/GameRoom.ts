@@ -9,7 +9,7 @@ import { DurableObject } from 'cloudflare:workers';
 import { nanoid } from '@sitnik/nanoid';
 import type { Room, Player, Challenge, PublicChallenge, ModelId } from '$lib/types/game';
 import { MODELS } from '$lib/config/models';
-import { TIMERS, SCORING, GAME } from '$lib/config/game';
+import { TIMERS, SCORING } from '$lib/config/game';
 
 type AlarmType = 'round_end' | 'review_end' | 'post_judging';
 
@@ -43,6 +43,7 @@ interface PublicPlayer {
 /** Sanitized room data for clients (no internal room.id, usedChallengeIds, etc.) */
 interface PublicRoom {
 	code: string;
+	hostId: string;
 	status: Room['status'];
 	round: number;
 	maxRounds: number;
@@ -153,7 +154,9 @@ export class GameRoom extends DurableObject<Env> {
 	private async handleRPC({ method, params = {} }: RPCRequest): Promise<Response> {
 		try {
 			const result = await this.dispatchRPC(method, params);
-			return Response.json(result ?? { ok: true });
+			// Return result as-is (can be null for queries like getRoomFull)
+			// Only use { ok: true } for void methods that return undefined
+			return Response.json(result === undefined ? { ok: true } : result);
 		} catch (err) {
 			return Response.json({ error: String(err) }, { status: 400 });
 		}
@@ -233,7 +236,7 @@ export class GameRoom extends DurableObject<Env> {
 
 	async webSocketClose(ws: WebSocket): Promise<void> {
 		const [playerId] = this.ctx.getTags(ws);
-		console.log(`Player ${playerId} disconnected`);
+		console.warn(`Player ${playerId} disconnected`);
 	}
 
 	async webSocketError(_ws: WebSocket, err: unknown): Promise<void> {
@@ -719,6 +722,7 @@ export class GameRoom extends DurableObject<Env> {
 	private sanitizeRoom(room: Room): PublicRoom {
 		return {
 			code: room.code,
+			hostId: room.hostId,
 			status: room.status,
 			round: room.round,
 			maxRounds: room.maxRounds,

@@ -9,6 +9,7 @@ import { room, sandbox } from '$lib/server/do-client';
 import { SandboxManager } from '$lib/server/e2b';
 import { joinRoomSchema } from '$lib/validation/schemas';
 import { createLogger } from '$lib/server/logger';
+import { generateRandomName } from '$lib/utils/nameGenerator';
 
 const log = createLogger('JoinRoom');
 
@@ -24,15 +25,27 @@ export const actions: Actions = {
 
 		const roomCode = result.output.code.toUpperCase();
 
+		// Sanitize name: replace spaces with underscores, trim, lowercase
+		const sanitizedName = result.output.name
+			.replace(/\s+/g, '_')
+			.replace(/^_+|_+$/g, '')
+			.toLowerCase();
+		// Use placeholder from form (what user saw) if name is empty, fallback to random
+		const placeholder = String(data.placeholder || '')
+			.replace(/\s+/g, '_')
+			.replace(/^_+|_+$/g, '')
+			.toLowerCase();
+		const playerName =
+			sanitizedName.replace(/_/g, '').length > 0
+				? sanitizedName
+				: placeholder || generateRandomName().toLowerCase();
+
 		// Join room via DO
-		const joined = await room.join(
-			roomCode,
-			result.output.name,
-			result.output.model as ModelId
-		);
+		const joined = await room.join(roomCode, playerName, result.output.model as ModelId);
 
 		if (!joined || 'error' in joined || !('room' in joined) || !joined.room) {
-			const errorMsg = (joined && 'error' in joined) ? joined.error : 'Room not found or game already started';
+			const errorMsg =
+				joined && 'error' in joined ? joined.error : 'Room not found or game already started';
 			return fail(404, { error: errorMsg });
 		}
 

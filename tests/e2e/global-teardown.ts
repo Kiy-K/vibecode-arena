@@ -19,9 +19,9 @@ async function globalTeardown() {
 		} else {
 			console.warn(`[Teardown] Cleanup endpoint returned ${response.status}`);
 		}
-	} catch (error) {
+	} catch {
 		// Server might already be shut down, which is fine
-		console.log('[Teardown] Could not reach cleanup endpoint (server may be stopped)');
+		console.warn('[Teardown] Could not reach cleanup endpoint (server may be stopped)');
 	}
 }
 

@@ -2,41 +2,44 @@
 
 # Development
 dev:
-	npm run dev
+	bun run dev
 
 dev-worker:
-	npm run dev:worker
+	bun run dev:worker
 
 dev-all:
-	npm run dev:all
+	bun run dev:all
 
 # Build
 build:
-	npm run build
+	bun run build
 
 # Quality
 check:
-	npm run check
+	bun run check
 
 lint:
-	npm run lint
+	bun run lint
 
 format:
-	npm run format
+	bun run format
 
 validate:
-	npm run check && npm run lint && npm run format:check
+	bun run check && bun run lint && bun run format:check
+
+validate-fix:
+	bun run check && bun run lint && bun run format
 
 # Setup
 install:
-	npm install
+	bun install
 
 clean:
 	rm -rf .svelte-kit node_modules/.vite
 
 # Deployment
 deploy:
-	npx wrangler deploy
+	bun run wrangler deploy
 
 deploy-secrets:
 	@echo "Enter OPENROUTER_API_KEY:" && npx wrangler secret put OPENROUTER_API_KEY
@@ -45,6 +48,11 @@ deploy-secrets:
 # E2B Template
 e2b-build:
 	E2B_API_KEY=$$E2B_API_KEY npx tsx sandbox/build.prod.ts
+
+kill-all:
+	@echo "Killing processes on ports 5173 and 8788..."
+	lsof -ti:5173,8788 | xargs kill -9 2>/dev/null || echo "No processes found"
+
 
 # Help
 help:

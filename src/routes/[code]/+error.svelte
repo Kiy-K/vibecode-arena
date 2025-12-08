@@ -55,7 +55,10 @@
 			{/if}
 		</div>
 
-		<a href="/" class="inline-block mt-8 text-sm text-neutral-600 hover:text-neutral-400 transition-colors">
+		<a
+			href="/"
+			class="inline-block mt-8 text-sm text-neutral-600 hover:text-neutral-400 transition-colors"
+		>
 			← back to home
 		</a>
 	</div>

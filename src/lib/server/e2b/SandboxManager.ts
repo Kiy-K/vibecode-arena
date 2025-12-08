@@ -66,7 +66,11 @@ class SandboxManagerImpl {
 			log.info('Sandbox created', { roomId, sandboxId: sandbox.sandboxId });
 			return sandbox;
 		} catch (error) {
-			log.error('Sandbox.create FAILED', { roomId, error: String(error), stack: (error as Error).stack });
+			log.error('Sandbox.create FAILED', {
+				roomId,
+				error: String(error),
+				stack: (error as Error).stack
+			});
 			throw error;
 		}
 	}

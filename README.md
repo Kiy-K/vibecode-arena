@@ -97,25 +97,42 @@ This starts:
 | `npm run lint`       | ESLint                     |
 | `npm run format`     | Prettier                   |
 
+### Pre-commit Hook
+
+The project uses [husky](https://typicode.github.io/husky/) + [lint-staged](https://github.com/lint-staged/lint-staged) to validate code before commits:
+
+1. **Type check** — Runs `bun run check`
+2. **Lint & fix** — ESLint with `--fix` on staged `.ts`, `.js`, `.svelte` files
+3. **Format** — Prettier on all staged files
+
+Commits are blocked if type errors or unfixable lint errors exist.
+
 ### Testing
 
-| Command                  | Description                                      |
-| ------------------------ | ------------------------------------------------ |
-| `bun run test`           | Run unit/integration tests (Vitest)              |
-| `bun run test:watch`     | Run tests in watch mode                          |
-| `bun run test:coverage`  | Run tests with coverage report                   |
-| `bun run test:e2e`       | Run all E2E tests (Playwright)                   |
-| `bun run test:e2e:quick` | Run E2E tests excluding sandbox tests (`@sandbox`) |
-| `bun run test:e2e:sandbox` | Run only sandbox tests (sequential)            |
-| `bun run test:e2e:ui`    | Run E2E tests with Playwright UI                 |
+| Command                       | Description                                            |
+| ----------------------------- | ------------------------------------------------------ |
+| `bun run test`                | Run unit/integration tests (Vitest)                    |
+| `bun run test:watch`          | Run tests in watch mode                                |
+| `bun run test:coverage`       | Run tests with coverage report                         |
+| `bun run test:e2e`            | Run all E2E tests (Playwright)                         |
+| `bun run test:e2e:quick`      | Run E2E tests excluding `@sandbox` tests (no E2B)      |
+| `bun run test:e2e:sandbox`    | Run only `@sandbox` tests (shared sandbox, sequential) |
+| `bun run test:e2e:ui`         | Playwright UI for non-sandbox tests                    |
+| `bun run test:e2e:ui:sandbox` | Playwright UI for sandbox tests only                   |
 
-Tests tagged with `@sandbox` require E2B API access and spin up real sandboxes.
+**Test Categories:**
+
+- **Quick tests** (`test:e2e:quick`) — Lobby, forms, errors, navigation. No E2B API needed, runs fast.
+- **Sandbox tests** (`test:e2e:sandbox`) — Full game flow with real E2B sandboxes. Tests share ONE sandbox via worker-scoped fixture to avoid rate limits.
+
+Tests tagged with `@sandbox` require `E2B_API_KEY` and spin up real sandboxes.
 
 ### CI/CD
 
 The project uses GitHub Actions with two workflows:
 
 **CI (`.github/workflows/ci.yml`)** — Runs on every push and PR:
+
 - Lint & type check
 - Unit & integration tests
 - Build verification
@@ -124,6 +141,7 @@ The project uses GitHub Actions with two workflows:
   - **On PR:** Full tests including sandbox tests
 
 **Deploy (`.github/workflows/deploy.yml`)** — Runs after CI passes on `main`:
+
 - Worker deploys only if `worker/` or `wrangler.toml` changed
 - App always deploys
 

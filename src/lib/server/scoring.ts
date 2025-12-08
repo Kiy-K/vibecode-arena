@@ -63,7 +63,10 @@ export function calculateScore(
 		const position = room.players.filter((p) => p.passed).length;
 
 		const timeBonus = Math.max(0, TIME_BONUS_MAX * (1 - timeRatio));
-		const efficiencyBonus = Math.max(0, EFFICIENCY_BONUS_MAX - promptsUsed * EFFICIENCY_PENALTY_PER_PROMPT);
+		const efficiencyBonus = Math.max(
+			0,
+			EFFICIENCY_BONUS_MAX - promptsUsed * EFFICIENCY_PENALTY_PER_PROMPT
+		);
 		const positionBonus = POSITION_BONUSES[position] ?? 0;
 
 		bonuses = timeBonus + efficiencyBonus + positionBonus;

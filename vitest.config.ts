@@ -10,7 +10,7 @@ export default defineConfig({
 		environment: 'node',
 		globals: true,
 		alias: {
-			'$lib': resolve(__dirname, './src/lib'),
+			$lib: resolve(__dirname, './src/lib'),
 			'$app/environment': resolve(__dirname, './tests/mocks/app-environment.ts'),
 			'$app/navigation': resolve(__dirname, './tests/mocks/app-navigation.ts'),
 			'$app/stores': resolve(__dirname, './tests/mocks/app-stores.ts')

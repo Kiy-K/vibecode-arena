@@ -174,4 +174,7 @@ export function createHintTool(context: HintToolContext): GameTool {
 }
 
 // Keep legacy export for backwards compatibility during migration
-export const getHintTool: GameTool = createHintTool({ playerId: 'default', challengeId: 'default' });
+export const getHintTool: GameTool = createHintTool({
+	playerId: 'default',
+	challengeId: 'default'
+});

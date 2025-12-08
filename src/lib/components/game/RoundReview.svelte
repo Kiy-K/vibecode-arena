@@ -63,23 +63,29 @@
 	/** Check if player has submitted (works with both Player and PublicPlayer) */
 	function hasPlayerSubmitted(player: Player | PublicPlayer): boolean {
 		if ('hasSubmitted' in player) return player.hasSubmitted;
-		return (player as Player).submissionTime !== undefined && (player as Player).submissionTime !== -1;
+		return (
+			(player as Player).submissionTime !== undefined && (player as Player).submissionTime !== -1
+		);
 	}
 </script>
 
-<div class="min-h-screen bg-black text-white flex flex-col">
+<div class="min-h-screen bg-black text-white flex flex-col" data-testid="round-review">
 	<!-- Header -->
 	<div class="border-b border-neutral-800 px-4 py-3">
 		<div class="max-w-6xl mx-auto flex items-center justify-between">
 			<div>
-				<h2 class="text-lg font-bold">Round {round} Complete</h2>
+				<h2 class="text-lg font-bold" data-testid="round-complete-header">
+					Round {round} Complete
+				</h2>
 				<p class="text-sm text-neutral-500">{challenge.title}</p>
 			</div>
 			<div class="text-right">
-				<p class="text-neutral-400 text-sm">
+				<p class="text-neutral-400 text-sm" data-testid="ready-count">
 					{readyCount}/{players.length} ready
 				</p>
-				<p class="text-2xl font-mono font-bold text-orange-500">{countdown}s</p>
+				<p class="text-2xl font-mono font-bold text-orange-500" data-testid="review-countdown">
+					{countdown}s
+				</p>
 				{#if isLastRound}
 					<p class="text-xs text-neutral-500">to final leaderboard</p>
 				{/if}
@@ -90,15 +96,22 @@
 	<!-- Content - Adaptive Grid based on player count -->
 	<div class="flex-1 overflow-auto p-4 flex items-center">
 		<div class="max-w-6xl mx-auto w-full">
-			<div class="grid gap-4 {
-				sortedPlayers.length === 1 ? 'grid-cols-1 max-w-xl mx-auto' :
-				sortedPlayers.length === 2 ? 'grid-cols-1 sm:grid-cols-2 max-w-3xl mx-auto' :
-				sortedPlayers.length <= 4 ? 'grid-cols-1 sm:grid-cols-2 max-w-4xl mx-auto' :
-				'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
-			}">
+			<div
+				class="grid gap-4 {sortedPlayers.length === 1
+					? 'grid-cols-1 max-w-xl mx-auto'
+					: sortedPlayers.length === 2
+						? 'grid-cols-1 sm:grid-cols-2 max-w-3xl mx-auto'
+						: sortedPlayers.length <= 4
+							? 'grid-cols-1 sm:grid-cols-2 max-w-4xl mx-auto'
+							: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'}"
+			>
 				{#each sortedPlayers as player, i (player.id)}
 					{@const isCurrentPlayer = player.id === currentPlayerId}
-					<div class="border {isCurrentPlayer ? 'border-orange-500/50' : 'border-neutral-800'} overflow-hidden bg-neutral-950/50">
+					<div
+						class="border {isCurrentPlayer
+							? 'border-orange-500/50'
+							: 'border-neutral-800'} overflow-hidden bg-neutral-950/50"
+					>
 						<!-- Preview -->
 						<div class="aspect-video bg-neutral-900 relative">
 							{#if player.sandboxUrl}
@@ -108,7 +121,9 @@
 									class="w-full h-full border-0"
 								></iframe>
 							{:else}
-								<div class="absolute inset-0 flex items-center justify-center text-neutral-600 text-sm">
+								<div
+									class="absolute inset-0 flex items-center justify-center text-neutral-600 text-sm"
+								>
 									No submission
 								</div>
 							{/if}
@@ -119,7 +134,9 @@
 							<div class="flex items-center justify-between mb-1">
 								<div class="flex items-center gap-2 min-w-0">
 									<span class="text-sm font-medium {getRankColor(i)}">{getRank(i)}</span>
-									<span class="text-sm truncate {isCurrentPlayer ? 'text-orange-400' : 'text-white'}">
+									<span
+										class="text-sm truncate {isCurrentPlayer ? 'text-orange-400' : 'text-white'}"
+									>
 										{displayName(player)}
 									</span>
 								</div>
@@ -143,7 +160,7 @@
 	<div class="border-t border-neutral-800 px-4 py-3 bg-neutral-950">
 		<div class="max-w-6xl mx-auto flex justify-between items-center">
 			<div class="flex gap-1">
-				{#each {length: maxRounds} as _, i (i)}
+				{#each { length: maxRounds } as _, i (i)}
 					<div class="w-8 h-1 {i < round ? 'bg-orange-500' : 'bg-neutral-800'}"></div>
 				{/each}
 			</div>
@@ -151,10 +168,12 @@
 			<button
 				onclick={onContinue}
 				disabled={isReady || markingReady}
+				data-testid="continue-button"
 				class="px-6 py-2 bg-orange-500 text-black font-bold hover:bg-orange-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
 			>
 				{#if markingReady}
-					<span class="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"></span>
+					<span class="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin"
+					></span>
 				{/if}
 				{#if isReady}
 					Waiting for others...

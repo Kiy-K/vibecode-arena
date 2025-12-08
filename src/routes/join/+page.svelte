@@ -22,13 +22,13 @@
 	// Get code from URL if provided (for direct join links)
 	let roomCode = $state(page.url.searchParams.get('code')?.toUpperCase() || '');
 
-	const handleKeydown = (e: KeyboardEvent) => { 
+	const handleKeydown = (e: KeyboardEvent) => {
 		if (e.key === 'Escape') goto('/');
 		if (e.key === 'Enter' && !loading) {
 			e.preventDefault();
 			formEl?.requestSubmit();
 		}
-	}
+	};
 </script>
 
 <svelte:window onkeydowncapture={handleKeydown} />
@@ -40,9 +40,15 @@
 </svelte:head>
 
 <div class="min-h-screen bg-black text-white flex items-center justify-center p-4 md:p-8">
-	<div class="w-full max-w-4xl border border-neutral-800 flex flex-col md:flex-row min-h-[500px]" style="view-transition-name: main-card;">
+	<div
+		class="w-full max-w-4xl border border-neutral-800 flex flex-col md:flex-row min-h-[500px]"
+		style="view-transition-name: main-card;"
+	>
 		<!-- Left: Main content -->
-		<div class="flex-1 flex flex-col items-center justify-center p-8" style="view-transition-name: main-content;">
+		<div
+			class="flex-1 flex flex-col items-center justify-center p-8"
+			style="view-transition-name: main-content;"
+		>
 			<a href="/" class="self-start text-neutral-500 hover:text-white mb-8 text-sm">
 				← back <span class="text-neutral-600">[Esc]</span>
 			</a>
@@ -94,12 +100,15 @@
 						<input
 							type="text"
 							id="nameInput"
+							name="name"
 							maxlength="20"
+							autocomplete="nickname"
 							bind:value={player.name}
 							placeholder={player.placeholder}
 							class="w-full px-4 py-3 bg-black border border-neutral-800 text-white placeholder-neutral-500 focus:outline-none focus:border-orange-500/50 transition-colors lowercase"
 						/>
-						<input type="hidden" name="name" value={player.name || player.placeholder} />
+						<!-- Send placeholder to server so empty name uses the same random name shown to user -->
+						<input type="hidden" name="placeholder" value={player.placeholder} />
 					</div>
 
 					<!-- Model selection -->
@@ -174,7 +183,10 @@
 		</div>
 
 		<!-- Right: Info panel -->
-		<div class="hidden md:flex w-72 bg-neutral-950/50 border-l border-neutral-800 flex-col" style="view-transition-name: side-panel;">
+		<div
+			class="hidden md:flex w-72 bg-neutral-950/50 border-l border-neutral-800 flex-col"
+			style="view-transition-name: side-panel;"
+		>
 			<div class="p-4 border-b border-neutral-800">
 				<div class="text-neutral-600 text-[10px] uppercase tracking-widest">how it works</div>
 			</div>

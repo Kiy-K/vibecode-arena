@@ -1,5 +1,5 @@
 // Mock for $app/stores in tests
-import { readable, writable } from 'svelte/store';
+import { readable } from 'svelte/store';
 
 export const page = readable({
 	url: new URL('http://localhost'),

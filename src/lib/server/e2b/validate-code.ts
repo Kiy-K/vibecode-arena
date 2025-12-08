@@ -1,6 +1,6 @@
 /**
  * Code validation for sandbox security.
- * Blocks potentially dangerous patterns in player code. 
+ * Blocks potentially dangerous patterns in player code.
  * I know we are in the sandbox, but I still don't want players to mess with it :D.
  * - especially when we use one shared sandbox - yeah each player could have their own but i am afraid that i would bankrupt
  */

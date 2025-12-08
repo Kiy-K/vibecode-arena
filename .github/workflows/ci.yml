@@ -81,12 +81,11 @@ jobs:
         run: bunx playwright install chromium
 
       - name: Run E2E tests (quick, no sandbox)
-        if: github.event_name != 'pull_request'
         run: bun run test:e2e:quick
 
-      - name: Run E2E tests (full, with sandbox)
+      - name: Run E2E tests (sandbox)
         if: github.event_name == 'pull_request'
-        run: bun run test:e2e
+        run: bun run test:e2e:sandbox
         env:
           E2B_API_KEY: ${{ secrets.E2B_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}

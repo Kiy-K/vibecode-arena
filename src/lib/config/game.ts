@@ -30,7 +30,7 @@ export const TIMERS = {
 	/** Delay before ending round after all players submit */
 	END_ROUND_DELAY: 10_000,
 	/** Delay after judging completes before transitioning to review */
-	POST_JUDGING_DELAY: 3_000,
+	POST_JUDGING_DELAY: 3_000
 } as const;
 
 // ============================================================================
@@ -51,7 +51,7 @@ export const SCORING = {
 	/** Cost per hint used */
 	HINT_COST: 50,
 	/** Maximum hints per round */
-	MAX_HINTS: 3,
+	MAX_HINTS: 3
 } as const;
 
 // ============================================================================
@@ -64,5 +64,5 @@ export const GAME = {
 	/** Minimum players to start */
 	MIN_PLAYERS: 1,
 	/** Maximum players per room */
-	MAX_PLAYERS: 10,
+	MAX_PLAYERS: 10
 } as const;

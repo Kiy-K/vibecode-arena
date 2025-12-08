@@ -46,8 +46,4 @@ export {
 export { runCode } from './runner';
 
 // Challenges
-export {
-	getShuffledChallenges,
-	CHALLENGES,
-	getChallengeById
-} from './challenges';
+export { getShuffledChallenges, CHALLENGES, getChallengeById } from './challenges';

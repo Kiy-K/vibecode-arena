@@ -39,7 +39,9 @@ test.describe('Home Page', () => {
 		await page.waitForTimeout(500);
 		// Dispatch keydown event directly to window for reliability
 		await page.evaluate(() => {
-			window.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', bubbles: true, cancelable: true }));
+			window.dispatchEvent(
+				new KeyboardEvent('keydown', { key: 'c', bubbles: true, cancelable: true })
+			);
 		});
 		await expect(page).toHaveURL('/create');
 	});
@@ -51,7 +53,9 @@ test.describe('Home Page', () => {
 		await page.waitForTimeout(500);
 		// Dispatch keydown event directly to window for reliability
 		await page.evaluate(() => {
-			window.dispatchEvent(new KeyboardEvent('keydown', { key: 'j', bubbles: true, cancelable: true }));
+			window.dispatchEvent(
+				new KeyboardEvent('keydown', { key: 'j', bubbles: true, cancelable: true })
+			);
 		});
 		await expect(page).toHaveURL('/join');
 	});

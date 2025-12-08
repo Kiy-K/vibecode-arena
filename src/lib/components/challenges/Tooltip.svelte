@@ -7,26 +7,27 @@
 @timeLimit: 60
 -->
 <script>
-  let { text = 'Hover me', tooltip = 'Tooltip text' } = $props();
-  let show = $state(false);
+	let { text = 'Hover me', tooltip = 'Tooltip text' } = $props();
+	let show = $state(false);
 </script>
 
 <div style="position: relative; display: inline-block;">
-  <button
-    onmouseenter={() => show = true}
-    onmouseleave={() => show = false}
-    style="
+	<button
+		onmouseenter={() => (show = true)}
+		onmouseleave={() => (show = false)}
+		style="
       padding: 8px 16px;
       background: #3b82f6;
       border: none;
       border-radius: 6px;
       color: white;
       cursor: pointer;
-    "
-  >{text}</button>
+    ">{text}</button
+	>
 
-  {#if show}
-    <div style="
+	{#if show}
+		<div
+			style="
       position: absolute;
       bottom: 100%;
       left: 50%;
@@ -38,9 +39,11 @@
       white-space: nowrap;
       font-size: 14px;
       box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-    ">
-      {tooltip}
-      <div style="
+    "
+		>
+			{tooltip}
+			<div
+				style="
         position: absolute;
         top: 100%;
         left: 50%;
@@ -48,7 +51,8 @@
         border-left: 6px solid transparent;
         border-right: 6px solid transparent;
         border-top: 6px solid #1f2937;
-      "></div>
-    </div>
-  {/if}
+      "
+			></div>
+		</div>
+	{/if}
 </div>

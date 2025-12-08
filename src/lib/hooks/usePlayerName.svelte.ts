@@ -33,7 +33,11 @@ export function usePlayerName() {
 	// Load saved name from localStorage on mount
 	onMount(() => {
 		const saved = localStorage.getItem(STORAGE_KEY);
-		if (saved) name = saved;
+		if (saved) {
+			// Trim and validate - don't restore whitespace-only values
+			const trimmed = saved.trim();
+			if (trimmed) name = trimmed;
+		}
 	});
 
 	/**
@@ -47,9 +51,15 @@ export function usePlayerName() {
 	}
 
 	return {
-		/** Current player name (always lowercase) */
-		get name() { return name; },
-		set name(v: string) { name = v.toLowerCase(); },
+		/** Current player name (always lowercase, spaces replaced with underscores) */
+		get name() {
+			return name;
+		},
+		set name(v: string) {
+			// Don't convert empty/whitespace-only to underscores
+			const trimmed = v.trim();
+			name = trimmed ? trimmed.toLowerCase().replace(/\s+/g, '_') : '';
+		},
 		/** Random placeholder name (lowercase) */
 		placeholder: placeholder.toLowerCase(),
 		save

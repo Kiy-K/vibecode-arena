@@ -76,7 +76,10 @@ export async function validateChatRequest(request: Request): Promise<ValidationR
 	// Rate limiting
 	const rateLimit = checkRateLimit(`chat:${playerId}`, CHAT_LIMITS.rateLimit);
 	if (!rateLimit.allowed) {
-		return { ok: false, response: json({ error: 'Too many requests', resetIn: rateLimit.resetIn }, { status: 429 }) };
+		return {
+			ok: false,
+			response: json({ error: 'Too many requests', resetIn: rateLimit.resetIn }, { status: 429 })
+		};
 	}
 
 	// Prompt count per round
