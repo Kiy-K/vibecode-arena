@@ -179,7 +179,7 @@
 					feedback={game.result?.feedback ?? ''}
 					formatTime={game.formatTime}
 					allSubmitted={game.allSubmitted}
-					reviewCountdown={game.allSubmittedCountdown}
+					countdownToReview={game.allSubmittedCountdown}
 				/>
 			{/if}
 

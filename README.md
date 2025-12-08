@@ -19,7 +19,7 @@ Why UI components? If the challenge was "implement quicksort", you'd just paste 
 
 ## How it works
 
-1. **Create a room** — Get a 6-character code to share with friends
+1. **Create a room** — Get a 6-character code to share with friends (or play solo to practice)
 2. **Pick your AI** — Choose from Claude, GPT, Gemini, Llama, and more (each with different score multipliers - tougher models yield higher points)
 3. **Compete in rounds** — See a reference UI component and prompt your AI to recreate it
 4. **Watch it render** — Your code runs live in a sandboxed environment
