@@ -27,15 +27,15 @@ export const MODELS = [
 		multiplier: 1.1,
 		disabled: false
 	},
-
-	// Free - enabled
 	{
-		id: 'qwen/qwen3-coder:free',
-		name: 'Qwen3 Coder',
+		id: 'qwen/qwen-2.5-coder-32b-instruct',
+		name: 'Qwen2.5 Coder 32B',
 		provider: 'Qwen',
 		multiplier: 1.15,
 		disabled: false
 	},
+
+	// Free - enabled
 	{
 		id: 'tngtech/deepseek-r1t2-chimera:free',
 		name: 'DeepSeek R1T2 Chimera',
