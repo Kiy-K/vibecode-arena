@@ -4,7 +4,7 @@ export default defineConfig({
 	testDir: './tests/e2e',
 	forbidOnly: !!process.env.CI,
 	retries: process.env.CI ? 2 : 0,
-	reporter: process.env.CI ? 'github' : 'html',
+	reporter: process.env.CI ? 'github' : 'list',
 	// Increased timeout for sandbox-dependent tests
 	timeout: 120000,
 	// Use single worker to avoid E2B rate limits (shared sandbox tests need this)

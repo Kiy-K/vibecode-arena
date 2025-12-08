@@ -8,7 +8,6 @@
 		similarityScore: number;
 		feedback: string;
 		formatTime: (seconds: number) => string;
-		onClose: () => void;
 	}
 
 	let {
@@ -19,8 +18,7 @@
 		submittedCount,
 		similarityScore,
 		feedback,
-		formatTime,
-		onClose
+		formatTime
 	}: Props = $props();
 </script>
 
@@ -74,12 +72,5 @@
 				all players finished!
 			{/if}
 		</div>
-
-		<button
-			onclick={onClose}
-			class="mt-6 px-6 py-2 text-neutral-500 hover:text-white transition-colors"
-		>
-			continue watching
-		</button>
 	</div>
 </div>
