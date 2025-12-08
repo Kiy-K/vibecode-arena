@@ -2,12 +2,18 @@
 
 [![Banner](./static/og-image.png)](https://vibecodearena.dev)
 
-Competitive multiplayer coding game where players pick an AI model and race to build UI components. Prompt your AI, watch your code render live, and outscore your friends. This project was created over the weekend to play with E2B's sandboxing capabilities - any feedback or contributions are welcome!
+Competitive multiplayer coding game where players pick an AI model and race to build UI components. Prompt your AI, watch your code render live, and outscore your friends. This project was created over the weekend to play with E2B's sandboxing capabilities.
+
+> **Note:** This is still a work in progress - not where I want it to be yet! Check out [Planned Features](#planned-features) or [open an issue](https://github.com/bxxf/vibecode-arena/issues) with ideas.
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=fff)
 ![Svelte](https://img.shields.io/badge/Svelte-FF3E00?logo=svelte&logoColor=fff)
 ![Cloudflare Workers](https://img.shields.io/badge/Cloudflare%20Workers-F38020?logo=cloudflare&logoColor=fff)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-06B6D4?logo=tailwindcss&logoColor=fff)
+
+## Why?
+
+I've always enjoyed playing casual multiplayer games like skribbl.io with friends to kill some time. Now that everyone's vibecoding, I thought - why not make a game out of it? Instead of drawing, you prompt. Instead of guessing, you watch code render in real-time. Same energy, new skills.
 
 ## How it works
 

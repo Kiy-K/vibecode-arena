@@ -143,7 +143,14 @@
 								</div>
 							{/if}
 							<div class="text-sm leading-relaxed text-neutral-300">
-								<MessageContent content={message.content} />
+								{#if message.role === 'assistant' && !message.content && chatLoading}
+									<div class="flex items-center gap-2">
+										<div class="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+										<span class="text-neutral-500">generating...</span>
+									</div>
+								{:else}
+									<MessageContent content={message.content} />
+								{/if}
 							</div>
 							{#if message.role === 'assistant'}
 								{@const extracted = extractCode(message.content)}
@@ -165,7 +172,7 @@
 						</div>
 					</div>
 				{/each}
-				{#if chatLoading && (messages.length === 0 || messages[messages.length - 1]?.role !== 'assistant' || !messages[messages.length - 1]?.content)}
+				{#if chatLoading && (messages.length === 0 || messages[messages.length - 1]?.role !== 'assistant')}
 					<div class="flex justify-start">
 						<div class="bg-neutral-900/50 border border-neutral-800/50 p-4">
 							<div class="text-xs text-neutral-600 mb-2 uppercase tracking-wider">
