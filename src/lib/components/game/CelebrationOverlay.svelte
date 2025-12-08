@@ -8,6 +8,8 @@
 		similarityScore: number;
 		feedback: string;
 		formatTime: (seconds: number) => string;
+		allSubmitted?: boolean;
+		reviewCountdown?: number;
 	}
 
 	let {
@@ -18,7 +20,9 @@
 		submittedCount,
 		similarityScore,
 		feedback,
-		formatTime
+		formatTime,
+		allSubmitted = false,
+		reviewCountdown = 0
 	}: Props = $props();
 </script>
 
@@ -64,7 +68,9 @@
 		{/if}
 
 		<div class="text-neutral-600 text-sm border-t border-neutral-800 pt-6">
-			{#if submittedCount < totalPlayers}
+			{#if allSubmitted && reviewCountdown > 0}
+				<span class="text-orange-400">review starting in {reviewCountdown}s</span>
+			{:else if submittedCount < totalPlayers}
 				waiting for {totalPlayers - submittedCount} more player{totalPlayers - submittedCount === 1
 					? ''
 					: 's'}...

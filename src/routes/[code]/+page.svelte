@@ -178,6 +178,8 @@
 					similarityScore={game.result?.score ?? 0}
 					feedback={game.result?.feedback ?? ''}
 					formatTime={game.formatTime}
+					allSubmitted={game.allSubmitted}
+					reviewCountdown={game.allSubmittedCountdown}
 				/>
 			{/if}
 
