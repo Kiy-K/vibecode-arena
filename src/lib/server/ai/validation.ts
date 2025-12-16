@@ -17,7 +17,10 @@ export const chatRequestSchema = v.object({
 	model: v.optional(
 		v.pipe(
 			v.string(),
-			v.check((val) => ENABLED_MODEL_IDS.includes(val), 'Model not available')
+			v.check(
+				(val) => (ENABLED_MODEL_IDS as readonly string[]).includes(val),
+				'Model not available'
+			)
 		)
 	),
 	language: v.optional(v.string(), 'javascript'),
