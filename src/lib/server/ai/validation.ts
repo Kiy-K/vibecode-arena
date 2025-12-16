@@ -6,7 +6,7 @@
 import { json } from '@sveltejs/kit';
 import * as v from 'valibot';
 import type { Room } from '$lib/types/game';
-import { MODEL_IDS } from '$lib/config/models';
+import { ENABLED_MODEL_IDS } from '$lib/config/models';
 import { CHAT_LIMITS } from './config';
 import { room } from '$lib/server/do-client';
 import { checkRateLimit, getPlayerPromptCount, incrementPlayerPrompt } from '$lib/server/ratelimit';
@@ -14,7 +14,12 @@ import { checkRateLimit, getPlayerPromptCount, incrementPlayerPrompt } from '$li
 /** Schema for validating chat API requests */
 export const chatRequestSchema = v.object({
 	messages: v.array(v.object({ role: v.string(), content: v.string() })),
-	model: v.optional(v.picklist(MODEL_IDS)),
+	model: v.optional(
+		v.pipe(
+			v.string(),
+			v.check((val) => ENABLED_MODEL_IDS.includes(val), 'Model not available')
+		)
+	),
 	language: v.optional(v.string(), 'javascript'),
 	roomCode: v.string(),
 	playerId: v.string()
