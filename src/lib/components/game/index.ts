@@ -1,9 +1,0 @@
-export { default as GameHeader } from './GameHeader.svelte';
-export { default as MobileTabs } from './MobileTabs.svelte';
-export { default as ChatArea } from './ChatArea.svelte';
-export { default as CodePanel } from './CodePanel.svelte';
-export { default as Lobby } from './Lobby.svelte';
-export { default as CelebrationOverlay } from './CelebrationOverlay.svelte';
-export { default as GameOver } from './GameOver.svelte';
-export { default as RoundReview } from './RoundReview.svelte';
-export { default as PlayerList } from './PlayerList.svelte';

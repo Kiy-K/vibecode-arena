@@ -1,78 +1,31 @@
-.PHONY: dev dev-all build check lint format validate install clean deploy e2b-build
+.PHONY: dev test smoke judge-smoke daytona-judge-smoke clean
 
-# Development
+ifneq (,$(wildcard .env))
+include .env
+export
+endif
+
+UV_PROJECT_ENVIRONMENT ?= .venv
+UV_CACHE_DIR ?= .uv-cache
+UV_LINK_MODE ?= copy
+export UV_PROJECT_ENVIRONMENT UV_CACHE_DIR UV_LINK_MODE
+
+UV := uv run
+
 dev:
-	bun run dev
+	$(UV) uvicorn arena.api:app --host 127.0.0.1 --port 8790
 
-dev-worker:
-	bun run dev:worker
+test:
+	$(UV) pytest tests_python
 
-dev-all:
-	bun run dev:all
+smoke:
+	$(UV) python -m arena.smoke agent
 
-# Build
-build:
-	bun run build
+judge-smoke:
+	$(UV) python -m arena.smoke judge
 
-# Quality
-check:
-	bun run check
-
-lint:
-	bun run lint
-
-format:
-	bun run format
-
-validate:
-	bun run check && bun run lint && bun run format:check
-
-validate-fix:
-	bun run check && bun run lint && bun run format
-
-# Setup
-install:
-	bun install
+daytona-judge-smoke:
+	JUDGE_SANDBOX_PROVIDER=daytona $(UV) python -m arena.smoke judge
 
 clean:
-	rm -rf .svelte-kit node_modules/.vite
-
-# Deployment
-deploy:
-	bun run wrangler deploy
-
-deploy-secrets:
-	@echo "Enter OPENROUTER_API_KEY:" && npx wrangler secret put OPENROUTER_API_KEY
-	@echo "Enter E2B_API_KEY:" && npx wrangler secret put E2B_API_KEY
-
-# E2B Template
-e2b-build:
-	E2B_API_KEY=$$E2B_API_KEY npx tsx sandbox/build.prod.ts
-
-kill-all:
-	@echo "Killing processes on ports 5173 and 8788..."
-	lsof -ti:5173,8788 | xargs kill -9 2>/dev/null || echo "No processes found"
-
-
-# Help
-help:
-	@echo "Available commands:"
-	@echo ""
-	@echo "Development:"
-	@echo "  make dev            - Start SvelteKit dev server"
-	@echo "  make dev-worker     - Start Wrangler dev server"
-	@echo "  make dev-all        - Start both servers"
-	@echo ""
-	@echo "Build:"
-	@echo "  make build          - Build SvelteKit for production"
-	@echo ""
-	@echo "Quality:"
-	@echo "  make check          - Run TypeScript checks"
-	@echo "  make lint           - Run ESLint"
-	@echo "  make format         - Format with Prettier"
-	@echo "  make validate       - Run all checks"
-	@echo ""
-	@echo "Deployment:"
-	@echo "  make deploy         - Deploy Worker via wrangler"
-	@echo "  make deploy-secrets - Set Worker secrets"
-	@echo "  make e2b-build      - Build and publish E2B template"
+	rm -rf .pytest_cache arena/__pycache__ tests_python/__pycache__
