@@ -39,7 +39,7 @@
 - **Leaderboard**: Ranking of Participants by Score. A Match exposes a flat Leaderboard and grouped Leaderboards by Model choice so Participants using different models can be compared fairly.
 - **Reveal**: Post-round visibility of Submissions and judging feedback. Submissions are not visible to other Participants before the round ends.
 - **Round progression**: Movement from one Challenge to the next in a Match. A round ends when its Deadline arrives or when all Participants have submitted, then moves to Reveal after Judging completes.
-- **Gradio surface**: Hackathon frontend for Hugging Face Spaces. The Gradio surface presents Match creation, Participant actions, Thread messages, Submissions, and Leaderboards.
+- **Gradio surface**: Monolithic hackathon frontend for Hugging Face Spaces. The Gradio surface presents Match creation, Participant actions, Thread messages, Submissions, and Leaderboards by calling `ArenaService` directly.
 - **Match view**: Redis-backed snapshot rendered by the Gradio surface. The Gradio surface refreshes Match views by timer polling every two seconds and by manual refresh.
 
 ## Current Direction
@@ -47,6 +47,7 @@
 Rewrite favors deep Python module seams:
 
 - `arena.api` handles protocol concerns.
+- `arena.gradio_app` owns the monolithic Gradio surface and stays thin over `ArenaService`.
 - `arena.match_flow` coordinates Match starts, Challenge attempts, Submissions, Judging, Scores, and Leaderboard views.
 - `arena.agent` hides DeepAgents, model, subagents, sandbox provider adapters, and lifecycle.
 - `arena.vibecoder` owns Challenge attempt context, Instructions, and Submission snapshot creation.

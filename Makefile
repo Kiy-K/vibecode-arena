@@ -1,4 +1,4 @@
-.PHONY: dev test smoke judge-smoke daytona-judge-smoke clean
+.PHONY: dev gradio test smoke judge-smoke daytona-judge-smoke clean
 
 ifneq (,$(wildcard .env))
 include .env
@@ -14,6 +14,9 @@ UV := uv run
 
 dev:
 	$(UV) uvicorn arena.api:app --host 127.0.0.1 --port 8790
+
+gradio:
+	$(UV) python app.py
 
 test:
 	$(UV) pytest tests_python

@@ -99,6 +99,8 @@ Done when:
 
 Purpose: let users drive Match setup without touching Redis details.
 
+Status: skeleton done. The app has a monolithic `arena.gradio_app` surface and `app.py` entrypoint. It can create, join, rejoin, start, send Instructions, submit, judge, refresh, and render Match/attempt/Leaderboard views. Styling and richer live streaming remain pending.
+
 Files:
 
 - `arena/gradio_app.py`
@@ -107,11 +109,13 @@ Files:
 
 UI sections:
 
-- Create Match.
-- Join Match.
-- Rejoin by token.
-- Lobby view.
-- Match view / Leaderboard placeholder.
+- Create Match. Implemented.
+- Join Match. Implemented.
+- Rejoin by token. Implemented.
+- Start Match. Implemented.
+- Send Instruction, Submit, Judge. Implemented.
+- Match view / Leaderboard view. Implemented.
+- Lobby polish and live stream view. Pending.
 
 Implementation notes:
 
@@ -131,7 +135,7 @@ Tests:
 Done when:
 
 - `make test` passes.
-- `make dev` or Hugging Face app entry launches Gradio UI.
+- `make gradio` or Hugging Face app entry launches Gradio UI.
 
 ## Phase 3: Vibecoder Seam
 

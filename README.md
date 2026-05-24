@@ -18,6 +18,12 @@ cp .env.example .env
 make dev
 ```
 
+For the Hugging Face-style monolithic UI:
+
+```bash
+make gradio
+```
+
 ## Test
 
 ```bash
@@ -73,6 +79,7 @@ curl -X POST http://127.0.0.1:8790/attempts/{attempt_id}/judge
 
 - `arena/api.py`: HTTP API.
 - `arena/service.py`: unified application API shared by FastAPI, future Gradio handlers, and tests.
+- `arena/gradio_app.py`: monolithic Gradio shell over `ArenaService`.
 - `arena/agent.py`: DeepAgent, subagents, sandbox backend, checkpointer, skills, permissions.
 - `arena/match_flow.py`: competition lifecycle conductor for attempts, submissions, judging, scores, and flat/grouped Leaderboards.
 - `arena/vibecoder.py`: competition attempt runner and streaming seam.

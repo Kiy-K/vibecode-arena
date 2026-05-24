@@ -7,6 +7,7 @@ import re
 import shutil
 import shlex
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 from typing import Any, Callable
@@ -42,7 +43,7 @@ class LocalJudgeExecutor:
                 capture_output=True,
                 text=True,
                 timeout=self.timeout_seconds,
-                env={"PATH": "/usr/local/bin:/usr/bin:/bin"},
+                env={"PATH": _judge_path()},
                 check=False,
             )
         except subprocess.TimeoutExpired as exc:
@@ -218,6 +219,11 @@ def _pointer_error(archive_pointer: str) -> str:
     if archive_pointer.startswith(LOCAL_SNAPSHOT_SCHEME):
         return "invalid snapshot id"
     return "unsupported archive pointer"
+
+
+def _judge_path() -> str:
+    executable_dir = str(Path(sys.executable).parent)
+    return os.pathsep.join([executable_dir, "/usr/local/bin", "/usr/bin", "/bin"])
 
 
 def _local_judge_backend() -> LocalShellBackend:
